@@ -1,14 +1,42 @@
-import { convexQuery } from "@convex-dev/react-query";
+import { useMemo } from "react";
 
-import { api } from "../../../convex/_generated/api";
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
-import { FIVE_MINUTES } from "@/lib/queryCache";
+import { db } from "@/lib/instant/db";
+import { isSelfHosted } from "@/lib/selfHosted";
 
-export function accountDeletionBlockersQueryKey() {
-  return convexQuery(api.account.getDeletionBlockers, {}).queryKey;
-}
-
-/** Deletion preconditions — keep short so blockers stay fresh after class/billing changes. */
 export function useAccountDeletionBlockers() {
-  return useAuthedQuery(api.account.getDeletionBlockers, {}, { gcTime: FIVE_MINUTES });
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const query = db.useQuery(
+    user
+      ? {
+          classes: { $: { where: { "owner.id": user.id } } },
+          subscriptions: { $: { where: { "user.id": user.id } } },
+        }
+      : null,
+  );
+
+  const data = useMemo(() => {
+    const blockers: Array<"owns_classes" | "active_subscription"> = [];
+    if (!query.data) return [];
+    if (query.data.classes.length > 0) {
+      blockers.push("owns_classes");
+    }
+    if (
+      !isSelfHosted() &&
+      query.data.subscriptions.some(
+        (sub: { status?: string }) => sub.status === "active" || sub.status === "trialing",
+      )
+    ) {
+      blockers.push("active_subscription");
+    }
+    return blockers;
+  }, [query.data]);
+
+  const isPending = isAuthLoading || query.isLoading;
+  return {
+    data,
+    isPending,
+    isLoading: isPending,
+    isError: Boolean(query.error),
+    error: query.error,
+  };
 }

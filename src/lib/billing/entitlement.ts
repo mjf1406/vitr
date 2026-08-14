@@ -21,7 +21,7 @@ const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
 /**
  * Derive entitlement status from raw billing fields + a client clock.
- * Keep `Date.now()` out of Convex queries — call this on the client.
+ * Keep `Date.now()` out of Instant queries — call this on the client.
  */
 export function deriveEntitlement(
   input: EntitlementInput,

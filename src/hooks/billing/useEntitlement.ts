@@ -1,23 +1,69 @@
 import { useMemo } from "react";
 
-import { api } from "../../../convex/_generated/api";
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
+import type { SubscriptionSummary } from "@/components/billing/SubscriptionManagement";
+import { db } from "@/lib/instant/db";
 import { deriveEntitlement } from "@/lib/billing/entitlement";
-import { FIVE_MINUTES } from "@/lib/queryCache";
+import { queryMeta } from "@/lib/instant/queryMeta";
 
-/** Security-adjacent — keep cache short so gates stay fresh after checkout. */
+function toSubscriptionSummary(row: {
+  status: string;
+  productKey?: string;
+  productName?: string;
+  amount?: number;
+  currency?: string;
+  recurringInterval?: string;
+  currentPeriodStart?: string;
+  currentPeriodEnd?: string;
+  startedAt?: string;
+  cancelAtPeriodEnd: boolean;
+  canceledAt?: string;
+  endsAt?: string;
+}): SubscriptionSummary {
+  return {
+    status: row.status,
+    productKey: row.productKey ?? null,
+    productName: row.productName ?? null,
+    amount: row.amount ?? null,
+    currency: row.currency ?? null,
+    recurringInterval: row.recurringInterval ?? null,
+    currentPeriodStart: row.currentPeriodStart ?? null,
+    currentPeriodEnd: row.currentPeriodEnd ?? null,
+    startedAt: row.startedAt ?? null,
+    cancelAtPeriodEnd: row.cancelAtPeriodEnd,
+    canceledAt: row.canceledAt ?? null,
+    endsAt: row.endsAt ?? null,
+  };
+}
+
 export function useEntitlement() {
-  const query = useAuthedQuery(api.billing.getEntitlement, {}, { gcTime: FIVE_MINUTES });
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const query = db.useQuery(
+    user
+      ? {
+          trialGrants: { $: { where: { "user.id": user.id } } },
+          subscriptions: { $: { where: { "user.id": user.id } } },
+        }
+      : null,
+  );
 
-  const entitlement = useMemo(() => {
-    if (!query.data) {
-      return null;
-    }
-    return deriveEntitlement(query.data);
+  const raw = useMemo(() => {
+    const grant = query.data?.trialGrants[0];
+    const subscription = query.data?.subscriptions.find(
+      (row) => row.status === "active" || row.status === "trialing",
+    );
+    return {
+      trialEndsAt: (grant?.endsAt as number | undefined) ?? null,
+      subscriptionStatus: subscription?.status ?? null,
+      subscription: subscription ? toSubscriptionSummary(subscription) : null,
+      productKey: subscription?.productKey ?? null,
+    };
   }, [query.data]);
 
+  const entitlement = useMemo(() => deriveEntitlement(raw), [raw]);
+
   return {
-    ...query,
+    data: raw,
     entitlement,
+    ...queryMeta(query, isAuthLoading),
   };
 }

@@ -4,8 +4,6 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM"],
     "module": "esnext",
-    // `node` is required because `convex/_generated/api` pulls Convex source into the
-    // app program, and those modules read `process.env`.
     "types": ["vite/client", "vite-plugin-pwa/react", "node"],
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
@@ -29,5 +27,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "shared"]
+  "include": ["src", "shared", "instant.schema.ts", "instant.perms.ts"]
 }

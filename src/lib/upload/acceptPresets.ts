@@ -2,7 +2,7 @@ import {
   getUploadPresetDefinition,
   type UploadPresetKey,
   UPLOAD_PRESET_DEFINITIONS,
-} from "../../../convex/lib/uploadPresets";
+} from "../../../shared/uploadPresets";
 
 export type { UploadPresetKey };
 

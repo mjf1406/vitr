@@ -1,36 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
-
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import { adminPost } from "@/lib/api/admin";
+import { useAsyncAction } from "@/hooks/useAsyncAction";
+import type { Id } from "@/lib/ids";
 
 type RedeemJoinCodeArgs = {
   code: string;
 };
 
-export function useRedeemJoinCode() {
-  const queryClient = useQueryClient();
-  const mutationFn = useConvexMutation(api.joinCodes.redeem);
-
-  return useMutation({
-    mutationFn: (args: RedeemJoinCodeArgs) => mutationFn(args),
-    onSuccess: async (result) => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: convexQuery(api.classes.listMine, {}).queryKey,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: convexQuery(api.classes.get, { classId: result.classId }).queryKey,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: convexQuery(api.permissions.forClass, { classId: result.classId }).queryKey,
-        }),
-      ]);
-    },
-  });
-}
-
 export type RedeemJoinCodeResult = {
   classId: Id<"classes">;
-  role: string;
+  alreadyMember?: boolean;
+  role?: string;
 };
+
+export function useRedeemJoinCode() {
+  return useAsyncAction((args: RedeemJoinCodeArgs) =>
+    adminPost<RedeemJoinCodeResult>("/api/join-codes/redeem", args),
+  );
+}

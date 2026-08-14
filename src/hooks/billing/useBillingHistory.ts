@@ -1,46 +1,81 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { useAction } from "convex/react";
-import { useConvexAuth } from "@convex-dev/auth/react";
+import { useCallback, useEffect, useState } from "react";
 
-import { api } from "../../../convex/_generated/api";
-import { FIVE_MINUTES } from "@/lib/queryCache";
+import { adminPost } from "@/lib/api/admin";
+import { db } from "@/lib/instant/db";
 
 export const billingHistoryQueryKey = ["billing", "orderHistory"] as const;
 
 const PAGE_SIZE = 10;
 
-/** Order history from Polar — 5-minute gcTime matches entitlement freshness. */
+type OrderPage = {
+  items: Array<{
+    id: string;
+    description: string;
+    status: string;
+    createdAt: string;
+    totalAmount: number;
+    currency: string;
+    paid: boolean;
+  }>;
+  page: number;
+  maxPage: number;
+};
+
 export function useBillingHistory() {
-  const { isAuthenticated, isLoading: isAuthLoading } = useConvexAuth();
-  const listOrders = useAction(api.billingActions.listOrders);
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const [pages, setPages] = useState<Array<OrderPage>>([]);
+  const [isPending, setIsPending] = useState(true);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const query = useInfiniteQuery({
-    queryKey: billingHistoryQueryKey,
-    enabled: isAuthenticated,
-    gcTime: FIVE_MINUTES,
-    staleTime: FIVE_MINUTES,
-    initialPageParam: 1,
-    queryFn: async ({ pageParam }) =>
-      listOrders({
-        page: pageParam,
-        limit: PAGE_SIZE,
-      }),
-    getNextPageParam: (lastPage) =>
-      lastPage.page < lastPage.maxPage ? lastPage.page + 1 : undefined,
-    retry: false,
-  });
+  const loadPage = useCallback(async (page: number, append: boolean) => {
+    const result = await adminPost<OrderPage>("/api/billing/orders", { page, limit: PAGE_SIZE });
+    setPages((prev) => (append ? [...prev, result] : [result]));
+    return result;
+  }, []);
 
-  const items = query.data?.pages.flatMap((page) => page.items) ?? [];
-  const isPending = isAuthLoading || query.isPending;
+  useEffect(() => {
+    if (isAuthLoading || !user) {
+      setIsPending(isAuthLoading);
+      return;
+    }
+    let cancelled = false;
+    setIsPending(true);
+    void loadPage(1, false)
+      .catch(() => {
+        if (!cancelled) setIsError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setIsPending(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, loadPage, user]);
+
+  const lastPage = pages[pages.length - 1];
+  const hasNextPage = lastPage ? lastPage.page < lastPage.maxPage : false;
+
+  const fetchNextPage = useCallback(async () => {
+    if (!lastPage || !hasNextPage) return;
+    setIsFetchingNextPage(true);
+    try {
+      await loadPage(lastPage.page + 1, true);
+    } catch {
+      setIsError(true);
+    } finally {
+      setIsFetchingNextPage(false);
+    }
+  }, [hasNextPage, lastPage, loadPage]);
 
   return {
-    items,
-    isPending,
+    items: pages.flatMap((page) => page.items),
+    isPending: isAuthLoading || isPending,
     isAuthLoading,
-    isError: query.isError,
-    refetch: query.refetch,
-    hasNextPage: query.hasNextPage,
-    isFetchingNextPage: query.isFetchingNextPage,
-    fetchNextPage: query.fetchNextPage,
+    isError,
+    refetch: () => loadPage(1, false),
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
   };
 }

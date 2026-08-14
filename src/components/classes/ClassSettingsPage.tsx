@@ -18,7 +18,7 @@ import { useSetClassBanner } from "@/hooks/classes/useSetClassBanner";
 import { useUpdateClass } from "@/hooks/classes/useUpdateClass";
 import { useFileBytes } from "@/hooks/files/useFileBytes";
 import type { ClassFormValues } from "@/lib/classes/classFormSchema";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type ClassSettingsPageProps = {
   classId: Id<"classes">;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Post-clone identity setup for the vctr template.
+ * Post-clone identity setup for the vitr template.
  *
  * Prompts for product identity, rewrites template brand fields, writes
  * .env.example, optionally runs `vp install`, and checks off matching items
@@ -22,7 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
 const CHECKLIST_PATH = path.join(ROOT, "CLONE_CHECKLIST.md");
-const APP_CONFIG_PATH = path.join(ROOT, "convex", "appConfig.ts");
+const APP_CONFIG_PATH = path.join(ROOT, "shared", "appConfig.ts");
 const PACKAGE_JSON_PATH = path.join(ROOT, "package.json");
 const INDEX_HTML_PATH = path.join(ROOT, "index.html");
 const DOCKER_COMPOSE_PATH = path.join(ROOT, "docker-compose.yml");
@@ -33,7 +33,7 @@ const ENV_LOCAL_PATH = path.join(ROOT, ".env.local");
 const I18N_DIR = path.join(ROOT, "src", "i18n", "resources");
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const TEMPLATE_SLUGS = new Set(["vctr", "classclarus"]);
+const TEMPLATE_SLUGS = new Set(["vitr", "vctr", "classclarus"]);
 
 /**
  * @param {string[]} argv
@@ -201,7 +201,7 @@ async function rewritePackageJson(identity) {
   const raw = await readFile(PACKAGE_JSON_PATH, "utf8");
   const pkg = JSON.parse(raw);
   pkg.name = identity.slug;
-  pkg.description = `${identity.name} — Vite+ / React / Convex app`;
+  pkg.description = `${identity.name} — InstantDB classroom app template (web, self-host, Electron)`;
   pkg.author = identity.name;
   pkg.repository = {
     type: "git",
@@ -302,26 +302,30 @@ async function rewriteFooterTaglines(tagline) {
 
 async function writeEnvExample() {
   const contents = `# Vite / local client env (copied ideas only — do not commit real secrets)
-# After \`bunx convex dev\`, real values live in \`.env.local\` (gitignored).
 
-# Written by Convex CLI:
-# CONVEX_DEPLOYMENT=dev:your-deployment
-# VITE_CONVEX_URL=https://….convex.cloud
-# VITE_CONVEX_SITE_URL=https://….convex.site
+# Instant app (from https://instantdb.com/dash or self-host dashboard :3000)
+# VITE_INSTANT_APP_ID=
+# VITE_INSTANT_API_URI=https://api.instantdb.com
+# VITE_ADMIN_URL=http://localhost:8787
+# VITE_INSTANT_GOOGLE_CLIENT_NAME=google-web
 
-# Optional: show password sign-in UI in cloud/dev (self-host enables this automatically)
-# VITE_AUTH_PASSWORD_ENABLED=true
-
-# Self-host SPA builds only (set by Docker / Electron — not needed for cloud Convex)
+# Self-host SPA builds (set by Docker / Electron)
 # VITE_SELF_HOSTED=true
 
-# ---------------------------------------------------------------------------
-# Convex deployment secrets — set with \`bunx convex env set\`, NOT in Vite:
-#   SITE_URL, JWT_PRIVATE_KEY, JWKS          → bunx @convex-dev/auth
-#   AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET       → Google OAuth
-#   POLAR_SERVER, POLAR_* token/secret/ids   → Polar billing
+# Admin server (Bun + Hono)
+# INSTANT_APP_ID=
+# INSTANT_APP_ADMIN_TOKEN=
+# INSTANT_API_URI=http://localhost:8888
+# ADMIN_PORT=8787
+
+# Polar billing (cloud only)
+# POLAR_ACCESS_TOKEN=
+# POLAR_WEBHOOK_SECRET=
+# POLAR_ORGANIZATION_ID=
+# POLAR_MONTHLY_PRODUCT_ID=
+# POLAR_YEARLY_PRODUCT_ID=
+
 # See CLONE_CHECKLIST.md for the full setup order.
-# ---------------------------------------------------------------------------
 `;
   await writeText(ENV_EXAMPLE_PATH, contents, ".env.example");
 }
@@ -424,14 +428,14 @@ function deriveUrlsFromGithub(githubUrl) {
   };
 }
 
-async function warnIfExistingConvexDeploy() {
+async function warnIfExistingInstantApp() {
   if (!existsSync(ENV_LOCAL_PATH)) return;
   const envLocal = await readFile(ENV_LOCAL_PATH, "utf8");
-  if (/^\s*CONVEX_DEPLOYMENT\s*=/m.test(envLocal)) {
+  if (/^\s*VITE_INSTANT_APP_ID\s*=/m.test(envLocal) || /^\s*INSTANT_APP_ID\s*=/m.test(envLocal)) {
     console.warn("");
     console.warn(
-      "Warning: `.env.local` already has CONVEX_DEPLOYMENT.\n" +
-        "Clones need a *new* Convex project — do not reuse the template deployment.\n" +
+      "Warning: `.env.local` already has an Instant app id.\n" +
+        "Clones need a *new* Instant app — do not reuse the template app.\n" +
         "This script will not modify `.env` / `.env.local` secrets.",
     );
     console.warn("");
@@ -574,7 +578,7 @@ async function collectIdentity() {
 }
 
 async function main() {
-  await warnIfExistingConvexDeploy();
+  await warnIfExistingInstantApp();
   const identity = await collectIdentity();
 
   console.log("\nApplying identity…");
@@ -647,13 +651,13 @@ async function main() {
   }
   console.log(`
 Suggested order:
-  1. bunx convex dev          # create a *new* Convex project
-  2. bunx @convex-dev/auth    # SITE_URL=http://localhost:5173 + JWT keys
-  3. Google OAuth → bunx convex env set AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET
-     Redirect: {CONVEX_SITE_URL}/api/auth/callback/google
-  4. Polar sandbox → env + grantAppAdmin + polar:syncProducts
-  5. Replace public/brand/** + public/vctr/vctr-favicon.webp
-  6. vp run ds
+  1. bunx instant-cli login && bunx instant-cli init-without-files --title <APP>
+  2. Put VITE_INSTANT_APP_ID / INSTANT_APP_ID / INSTANT_APP_ADMIN_TOKEN in .env.local
+  3. bunx instant-cli push schema && bunx instant-cli push perms
+  4. Google OAuth client name in Instant dashboard; VITE_INSTANT_GOOGLE_CLIENT_NAME
+  5. Polar sandbox → admin-server env (POLAR_*)
+  6. Replace public/brand/** + public/vctr/vctr-favicon.webp
+  7. vp run ds
 
 Do not copy template secrets. Tick boxes in CLONE_CHECKLIST.md as you go.
 `);

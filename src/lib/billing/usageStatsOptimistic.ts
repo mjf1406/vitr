@@ -1,5 +1,5 @@
-import type { DesktopOs, UsageStatsSummary } from "../../../convex/lib/usageTracking";
-import { pickChip, STATS_PERIODS } from "../../../convex/lib/usageTracking";
+import type { DesktopOs, UsageStatsSummary } from "../../../shared/usageTracking";
+import { pickChip, STATS_PERIODS } from "../../../shared/usageTracking";
 
 function bumpPeriods(counts: UsageStatsSummary["downloads"]): UsageStatsSummary["downloads"] {
   const next = { ...counts };

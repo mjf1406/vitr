@@ -1,13 +1,10 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 import { toast } from "@/components/ui/toast-manager";
 import { useSetMemberRole } from "@/hooks/members/useSetMemberRole";
 import { messageFromError } from "@/lib/errors/convexError";
+import type { Id } from "@/lib/ids";
 import type { ClassMemberPublic, JoinCodeRole } from "@/lib/members/members";
 import { getDisplayName } from "@/lib/user/userDisplay";
 
@@ -19,7 +16,6 @@ type PendingRoleChange = {
 export function useChangeMemberRoleWithConfirm(classId: Id<"classes">) {
   const { t } = useTranslation("classes");
   const { t: tCommon } = useTranslation("common");
-  const queryClient = useQueryClient();
   const setRoleMutation = useSetMemberRole();
   const [pending, setPending] = useState<PendingRoleChange | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -39,17 +35,6 @@ export function useChangeMemberRoleWithConfirm(classId: Id<"classes">) {
   const requestRoleChange = useCallback(
     async (member: ClassMemberPublic, role: JoinCodeRole) => {
       try {
-        const result = await queryClient.fetchQuery({
-          ...convexQuery(api.classPermissions.hasPermissionOverrides, {
-            classId,
-            userId: member.userId,
-          }),
-        });
-        if (result.hasOverrides) {
-          setPending({ member, role });
-          setConfirmOpen(true);
-          return;
-        }
         await applyRoleChange(member, role);
       } catch (error) {
         toast.add({
@@ -58,7 +43,7 @@ export function useChangeMemberRoleWithConfirm(classId: Id<"classes">) {
         });
       }
     },
-    [applyRoleChange, classId, queryClient, t, tCommon],
+    [applyRoleChange, t, tCommon],
   );
 
   const confirmPendingRoleChange = useCallback(() => {

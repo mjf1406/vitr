@@ -14,7 +14,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { APP_CONFIG } from "@/config/app";
-import { isPasswordAuthEnabled } from "@/lib/auth/authPassword";
 import { getSafeAuthRedirect } from "@/lib/auth/authRedirect";
 import { stashPendingJoinCode } from "@/lib/auth/pendingJoinCode";
 import { JOIN_CODE_PARAM } from "@/lib/invitations/joinCodes";
@@ -74,7 +73,6 @@ export const Route = createFileRoute("/_public/login")({
     const { redirect: redirectTo } = Route.useSearch();
     const [termsAccepted, setTermsAccepted] = useState(false);
     const { t } = useTranslation(["auth", "common"]);
-    const passwordEnabled = isPasswordAuthEnabled();
     const isMobile = useLoginViewport();
 
     if (auth.isLoading || isMobile === null) {
@@ -122,11 +120,7 @@ export const Route = createFileRoute("/_public/login")({
                   termsAccepted={termsAccepted}
                   onTermsAcceptedChange={setTermsAccepted}
                 />
-                <LoginAuthFields
-                  termsAccepted={termsAccepted}
-                  redirectTo={redirectTo}
-                  passwordEnabled={passwordEnabled}
-                />
+                <LoginAuthFields termsAccepted={termsAccepted} redirectTo={redirectTo} />
               </div>
             </DrawerContent>
           </Drawer>
@@ -153,11 +147,7 @@ export const Route = createFileRoute("/_public/login")({
               termsAccepted={termsAccepted}
               onTermsAcceptedChange={setTermsAccepted}
             />
-            <LoginAuthFields
-              termsAccepted={termsAccepted}
-              redirectTo={redirectTo}
-              passwordEnabled={passwordEnabled}
-            />
+            <LoginAuthFields termsAccepted={termsAccepted} redirectTo={redirectTo} />
           </CardContent>
         </Card>
       </div>

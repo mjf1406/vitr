@@ -1,13 +1,52 @@
-import { convexQuery } from "@convex-dev/react-query";
+import { useMemo } from "react";
 
-import { api } from "../../../convex/_generated/api";
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
-import { ONE_HOUR } from "@/lib/queryCache";
+import { db } from "@/lib/instant/db";
+import { first } from "@/lib/instant/first";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
+import type { AppLanguage } from "@/lib/languages";
 
-export function currentUserQueryKey() {
-  return convexQuery(api.users.currentUser, {}).queryKey;
-}
+export type CurrentUser = {
+  _id: string;
+  email?: string;
+  name?: string;
+  image?: string | null;
+  settings: { language: AppLanguage } | null;
+  providers: Array<string>;
+  isAppAdmin: boolean;
+};
 
 export function useCurrentUser() {
-  return useAuthedQuery(api.users.currentUser, {}, { gcTime: ONE_HOUR });
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const query = db.useQuery(
+    user
+      ? {
+          profiles: { $: { where: { "$user.id": user.id } }, avatar: {} },
+        }
+      : null,
+  );
+
+  const data = useMemo<CurrentUser | null>(() => {
+    if (!user) return null;
+    const profile = query.data?.profiles[0];
+    const avatar = profile ? first(profile.avatar) : null;
+    return {
+      _id: user.id,
+      email: user.email ?? undefined,
+      name: profile?.name ?? undefined,
+      image: sanitizeAvatarUrl(avatar?.url) ?? null,
+      settings: profile ? { language: profile.language as AppLanguage } : { language: "en" },
+      providers: [],
+      isAppAdmin: profile?.isAppAdmin === true,
+    };
+  }, [query.data, user]);
+
+  const isPending = isAuthLoading || query.isLoading;
+  return {
+    data,
+    isPending,
+    isLoading: isPending,
+    isError: Boolean(query.error),
+    error: query.error ?? null,
+    isAuthLoading,
+  };
 }

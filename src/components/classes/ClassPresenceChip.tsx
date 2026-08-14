@@ -33,7 +33,10 @@ function statusLabel(
   if (entry.online) {
     return t("presenceOnlineNow");
   }
-  const diffSec = Math.max(0, Math.floor((Date.now() - entry.lastDisconnected) / 1000));
+  const diffSec = Math.max(
+    0,
+    Math.floor((Date.now() - (entry.lastDisconnected ?? Date.now())) / 1000),
+  );
   if (diffSec < 60) {
     return t("presenceLastSeenJustNow");
   }

@@ -22,7 +22,6 @@ function pageLabelKey(pathname: string, classId: string): string {
     return "navDashboard";
   }
   if (pathname === `${base}/settings`) return "navSettings";
-  if (pathname === `${base}/permissions`) return "navPermissions";
   if (pathname === `${base}/teachers`) return "navTeachers";
   if (pathname === `${base}/assistant-teachers`) return "navAssistantTeachers";
   if (pathname === `${base}/students`) return "navStudents";

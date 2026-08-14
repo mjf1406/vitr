@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { UploadCloud } from "lucide-react";
 
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {

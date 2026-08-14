@@ -1,4 +1,4 @@
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import type { ClassRole, JoinCodeRole, MemberListRole } from "@/lib/permissions/classPermissions";
 import {
   assignableRolesFor,

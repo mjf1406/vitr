@@ -3,7 +3,7 @@ import type { TFunction } from "i18next";
 
 import { DataTableSortableHeader } from "@/components/feedback/DataTableSortableHeader";
 import { Badge } from "@/components/ui/badge";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import { formatLocalizedDateTime } from "@/i18n/formatDate";
 
 export const SEVERITY_NONE = "__none__";

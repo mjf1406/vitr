@@ -17,7 +17,7 @@ type CheckoutButtonProps = {
 };
 
 /**
- * App-owned checkout trigger. Unlike `@convex-dev/polar`'s `CheckoutLink`,
+ * App-owned checkout trigger. Unlike Polar's hosted checkout link widgets,
  * this always clears pending UI and surfaces errors via toast.
  */
 export function CheckoutButton({

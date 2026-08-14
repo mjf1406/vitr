@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+
 import { Button } from "../ui/button";
 import { getSafeAuthRedirect } from "@/lib/auth/authRedirect";
+import { db } from "@/lib/instant/db";
+import { readViteEnv } from "@/lib/runtimeEnv";
 
 interface SignInProps {
   termsAccepted?: boolean;
@@ -11,18 +13,17 @@ interface SignInProps {
 }
 
 export function SignInWithGoogle({ termsAccepted = false, redirectTo }: SignInProps) {
-  const { signIn } = useAuthActions();
   const { t } = useTranslation("auth");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignIn = () => {
     if (!termsAccepted) return;
     setIsLoading(true);
-
     const safeRedirectTo = getSafeAuthRedirect(redirectTo);
-    signIn("google", { redirectTo: safeRedirectTo }).catch(() => {
-      setIsLoading(false);
-    });
+    const clientName = readViteEnv("VITE_INSTANT_GOOGLE_CLIENT_NAME") ?? "google-web";
+    const redirectURL = new URL(safeRedirectTo, window.location.origin).href;
+    const url = db.auth.createAuthorizationURL({ clientName, redirectURL });
+    window.location.assign(url);
   };
 
   return (

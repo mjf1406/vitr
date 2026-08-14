@@ -1,4 +1,3 @@
-import { useConvexAuth } from "@convex-dev/auth/react";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode, SVGProps } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { APP_CONFIG } from "@/config/app";
 import { useAppLanguage } from "@/i18n/language-context";
 import { isSelfHosted } from "@/lib/selfHosted";
+import { db } from "@/lib/instant/db";
 
 /** Lucide no longer ships a GitHub mark; keep a simple brand SVG. */
 function GithubIcon(props: SVGProps<SVGSVGElement>) {
@@ -66,7 +66,8 @@ function FooterColumn({ title, children }: { title: string; children: ReactNode 
 
 export function AppFooter() {
   const { t } = useTranslation("common");
-  const { isAuthenticated } = useConvexAuth();
+  const { user } = db.useAuth();
+  const isAuthenticated = Boolean(user);
   const { language, setLanguage, isSaving } = useAppLanguage();
   const year = new Date().getFullYear();
   const showFeedback = isAuthenticated && !isSelfHosted();

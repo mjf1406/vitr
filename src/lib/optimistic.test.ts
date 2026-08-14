@@ -9,16 +9,7 @@ import {
 } from "./optimistic";
 
 /**
- * Cache helpers used by `useOptimisticMutation` (`src/hooks/useOptimisticMutation.ts`).
- *
- * onMutate ordering contract (do not regress):
- * 1. Snapshot `getQueryData` for each key
- * 2. Start `cancelQueries` without awaiting
- * 3. `applyOptimisticUpdate` (paint immediately)
- * 4. Await the cancel promises so late responses cannot overwrite optimistic data
- *
- * Full hook ordering is not unit-tested here (needs a QueryClient harness); keep
- * that sequence when editing the hook.
+ * List helpers used by Instant transact optimistic UI (`id` / `_id` rows).
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

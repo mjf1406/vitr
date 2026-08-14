@@ -3,9 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 export type StaticEnv = {
-  VITE_CONVEX_URL: string;
-  VITE_CONVEX_SITE_URL: string;
-  VITE_AUTH_PASSWORD_ENABLED: string;
+  VITE_INSTANT_APP_ID: string;
+  VITE_INSTANT_API_URI: string;
+  VITE_ADMIN_URL: string;
   VITE_CLASS_PRESENCE_ENABLED: string;
   VITE_SELF_HOSTED: string;
 };
@@ -36,10 +36,6 @@ function selfHostEnvScript(env: StaticEnv): string {
   return `window.__SELF_HOST_ENV__ = ${JSON.stringify(env)};\n`;
 }
 
-/**
- * Serve the Vite build on 0.0.0.0 so LAN students can connect.
- * `/self-host-env.js` is generated live (LAN IP / ports may change).
- */
 export async function listenStaticServer(options: {
   rootDir: string;
   port: number;

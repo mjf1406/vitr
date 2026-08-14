@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { SignInWithGoogle } from "@/components/auth/SignInWithGoogle";
-import { SignInWithPasswordLazy } from "@/components/auth/SignInWithPasswordLazy";
+import { SignInWithPassword } from "@/components/auth/SignInWithPassword";
 import { Checkbox } from "@/components/ui/checkbox";
 import { APP_CONFIG } from "@/config/app";
 
@@ -65,24 +65,26 @@ export function LoginTermsCheckbox({
 export function LoginAuthFields({
   termsAccepted,
   redirectTo,
-  passwordEnabled,
 }: {
   termsAccepted: boolean;
   redirectTo: string | undefined;
-  passwordEnabled: boolean;
+  passwordEnabled?: boolean;
 }) {
   const { t } = useTranslation("auth");
 
   return (
     <>
-      {passwordEnabled ? (
-        <SignInWithPasswordLazy termsAccepted={termsAccepted} redirectTo={redirectTo} />
-      ) : (
-        <SignInWithGoogle termsAccepted={termsAccepted} redirectTo={redirectTo} />
-      )}
-      <p className="text-sm opacity-50">
-        {passwordEnabled ? t("passwordAuthNote") : t("googleOnlyNote")}
-      </p>
+      <SignInWithPassword termsAccepted={termsAccepted} redirectTo={redirectTo} />
+      <div className="relative py-2">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">{t("orContinueWith")}</span>
+        </div>
+      </div>
+      <SignInWithGoogle termsAccepted={termsAccepted} redirectTo={redirectTo} />
+      <p className="text-sm opacity-50">{t("magicCodeNote")}</p>
       <div className="mt-4 border-t pt-4">
         <p className="text-center text-xs text-muted-foreground">
           {t("appFooter")}{" "}

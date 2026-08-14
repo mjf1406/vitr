@@ -42,8 +42,8 @@ import {
 } from "@/lib/members/members";
 import { isJoinCodeRole } from "@/lib/permissions/classPermissions";
 import { getDisplayName, getInitials } from "@/lib/user/userDisplay";
-import type { Id } from "../../../convex/_generated/dataModel";
-import { sanitizeAvatarUrl } from "../../../convex/lib/avatarUrl";
+import type { Id } from "@/lib/ids";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
 
 type MemberRowProps = {
   member: ClassMemberPublic;

@@ -1,18 +1,9 @@
-import { useConvexMutation } from "@convex-dev/react-query";
-import { useTranslation } from "react-i18next";
-
-import { api } from "../../../convex/_generated/api";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import { adminPost } from "@/lib/api/admin";
+import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { toast } from "@/components/ui/toast-manager";
-import { classDetailQueryKey } from "@/hooks/classes/useClass";
-import { classesListQueryKey } from "@/hooks/classes/useClasses";
-import { fileBytesQueryKey } from "@/hooks/files/useFileBytes";
-import { useOptimisticMutation } from "@/hooks/useOptimisticMutation";
-import type { ClassPublic } from "@/lib/classes/classes";
 import { messageFromError } from "@/lib/errors/convexError";
-import { patchDoc } from "@/lib/optimistic";
-
-type ClassDoc = Doc<"classes">;
+import type { Id } from "@/lib/ids";
+import { useTranslation } from "react-i18next";
 
 type SetClassBannerArgs = {
   classId: Id<"classes">;
@@ -22,31 +13,7 @@ type SetClassBannerArgs = {
 export function useSetClassBanner() {
   const { t } = useTranslation("classes");
   const { t: tCommon } = useTranslation("common");
-  const mutationFn = useConvexMutation(api.classes.setBanner);
-  const listKey = classesListQueryKey();
-
-  return useOptimisticMutation({
-    mutationFn: (args: SetClassBannerArgs) => mutationFn(args),
-    queryKeys: (args) => [listKey, classDetailQueryKey(args.classId)],
-    applyOptimisticUpdate: (queryClient, args) => {
-      const detailKey = classDetailQueryKey(args.classId);
-      const previous = queryClient.getQueryData<ClassDoc | null>(detailKey);
-      const previousBannerId = previous?.bannerFileId;
-      if (previousBannerId !== undefined && previousBannerId !== args.fileId) {
-        void queryClient.removeQueries({ queryKey: fileBytesQueryKey(previousBannerId) });
-      }
-      const now = Date.now();
-      const patch = { bannerFileId: args.fileId, updatedAt: now };
-      queryClient.setQueryData<ClassPublic[]>(listKey, (old) => {
-        if (!old) return old;
-        return old.map((classDoc) =>
-          classDoc._id === args.classId ? { ...classDoc, ...patch } : classDoc,
-        );
-      });
-      queryClient.setQueryData<ClassDoc | null>(detailKey, (old) =>
-        patchDoc(old ?? null, (doc) => ({ ...doc, ...patch })),
-      );
-    },
+  return useAsyncAction((args: SetClassBannerArgs) => adminPost("/api/classes/set-banner", args), {
     onError: (error) => {
       toast.add({
         title: messageFromError(error, t("bannerSaveFailed"), tCommon("rateLimited")),

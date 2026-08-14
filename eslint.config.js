@@ -2,8 +2,6 @@ import js from "@eslint/js";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
 import tseslint from "@typescript-eslint/eslint-plugin";
-import pluginQuery from "@tanstack/eslint-plugin-query";
-import convexPlugin from "@convex-dev/eslint-plugin";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import { fileURLToPath } from "node:url";
@@ -20,9 +18,8 @@ export default [
       "resources/**",
       "public/**",
       "docker/**",
-      "convex/_generated/**",
       "src/routeTree.gen.ts",
-      "convex/**/*.test.ts",
+      "instant.config.ts",
       // One-off Bun scripts are not in a TS project
       "scripts/**/*.ts",
     ],
@@ -105,33 +102,6 @@ export default [
     },
   },
 
-  // TanStack Query rules (AST-only; safe without type info).
-  ...pluginQuery.configs["flat/recommended"],
-
-  // Convex rules (some require type-aware linting).
-  ...convexPlugin.configs.recommended,
-
-  // Additional Convex hardening for this template.
-  // Do not list convex paths in allowDefaultProject — they are already in
-  // tsconfig.convex.json; dual membership makes typed lint fail to parse.
-  {
-    files: ["convex/**/*.ts"],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        projectService: {
-          // Use the dedicated tsconfig for Convex so type-aware rules
-          // (e.g. `@convex-dev/*`) have type info.
-          defaultProject: "./tsconfig.convex.json",
-        },
-        tsconfigRootDir,
-      },
-    },
-    rules: {
-      "@convex-dev/no-collect-in-query": "error",
-    },
-  },
-
   // Electron main/preload + shared types (Node, tsconfig.node.json).
   // Do not list these paths in allowDefaultProject — they are already in
   // tsconfig.node.json; dual membership makes typed lint fail to parse.
@@ -156,7 +126,26 @@ export default [
     },
   },
 
-  // Bun/Node scripts + root builder configs (no TS project).
+  // Bun admin server (tsconfig.server.json).
+  {
+    files: ["server/**/*.ts"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        projectService: {
+          defaultProject: "./tsconfig.server.json",
+        },
+        tsconfigRootDir,
+      },
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
+    rules: {
+      "react-refresh/only-export-components": "off",
+    },
+  },
   {
     files: ["scripts/**/*.{js,mjs,cjs}", "electron-builder.config.mjs"],
     languageOptions: {

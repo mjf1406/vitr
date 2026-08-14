@@ -9,7 +9,7 @@ import { useClassPresence } from "@/hooks/presence/useClassPresence";
 import { usePresenceDisplaySummaries } from "@/hooks/presence/usePresenceDisplaySummaries";
 import { useCurrentUser } from "@/hooks/user/useCurrentUser";
 import { mergePresenceDisplaySummaries } from "@/lib/presence/presence";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type ClassPresenceProviderProps = {
   classId: Id<"classes">;

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { MembersPage } from "@/components/members/MembersPage";
 import { RequirePermission } from "@/components/permissions/RequirePermission";
-import type { Id } from "../../../../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 export const Route = createFileRoute("/_authenticated/_class/class/$classId/students")({
   component: function ClassStudentsPage() {

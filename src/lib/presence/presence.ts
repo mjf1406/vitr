@@ -1,6 +1,6 @@
 import type { PresenceState } from "@/hooks/presence/useClassPresence";
 
-/** Matches `@convex-dev/presence` default list limit. */
+/** Instant Rooms presence list cap. */
 export const PRESENCE_LIST_LIMIT = 104;
 
 export type PresenceDisplaySummary = {
@@ -10,7 +10,6 @@ export type PresenceDisplaySummary = {
 };
 
 /**
- * Stable, deduplicated online user IDs for TanStack/Convex query keys.
  * Sorted so tabs viewing the same class share one subscription.
  */
 export function normalizeOnlineUserIds(

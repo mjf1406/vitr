@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { InvitationsPage } from "@/components/invitations/InvitationsPage";
 import { RequirePermission } from "@/components/permissions/RequirePermission";
 import { useClass } from "@/hooks/classes/useClass";
-import type { Id } from "../../../../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 export const Route = createFileRoute("/_authenticated/_class/class/$classId/invitations")({
   component: function ClassInvitationsPage() {

@@ -4,11 +4,11 @@ export type ClassroomSession = {
   status: ClassroomSessionStatus;
   lanBaseUrl: string | null;
   loopbackBaseUrl: string;
-  convexUrl: string;
-  convexSiteUrl: string;
+  instantApiUri: string;
+  adminUrl: string;
   webPort: number;
-  convexPort: number;
-  sitePort: number;
+  instantPort: number;
+  adminPort: number;
   lanIp: string | null;
   errorMessage: string | null;
   trustedLanWarning: boolean;

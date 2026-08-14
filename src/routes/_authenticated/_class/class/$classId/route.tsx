@@ -28,7 +28,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { useClass } from "@/hooks/classes/useClass";
 import { useRemoveFileBytesOnAccessLoss } from "@/hooks/files/useFileBytes";
 import { isClassPresenceEnabled } from "@/lib/presence/presenceEnabled";
-import type { Id } from "../../../../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 export const Route = createFileRoute("/_authenticated/_class/class/$classId")({
   component: function ClassLayout() {

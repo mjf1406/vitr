@@ -1,25 +1,22 @@
 # syntax=docker/dockerfile:1
 
-# --- Deploy: push Convex functions + set self-host env -----------------
-FROM oven/bun:1.3.14 AS deploy
+# --- Admin: Bun + Hono privileged API ---------------------------------
+FROM oven/bun:1.3.14 AS admin
 
 WORKDIR /app
 
 COPY package.json bun.lock ./
-COPY patches ./patches
 RUN bun install --frozen-lockfile --ignore-scripts
 
-COPY convex ./convex
-COPY tsconfig.json tsconfig.app.json tsconfig.node.json ./
-COPY docker/deploy.sh docker/generate-auth-keys.mjs ./docker/
-COPY scripts/self-host-bootstrap.mjs scripts/self-host-bootstrap-cli.mjs scripts/convexFingerprint.mjs ./scripts/
-RUN chmod +x /app/docker/deploy.sh
+COPY instant.schema.ts instant.perms.ts ./
+COPY shared ./shared
+COPY server ./server
 
-ENTRYPOINT ["/app/docker/deploy.sh"]
+ENV ADMIN_PORT=8787
+EXPOSE 8787
+CMD ["bun", "server/index.ts"]
 
 # --- Web: install + build in ONE full image (same glibc / native deps) -
-# Copying node_modules from oven/bun into node:*-slim often SIGABRTs
-# Rolldown/Vite+ native bindings (exit 134) even on hosts with plenty of RAM.
 FROM node:22-bookworm AS web-build
 
 RUN npm install -g bun@1.3.14 \
@@ -30,21 +27,19 @@ RUN npm install -g bun@1.3.14 \
 WORKDIR /app
 
 COPY package.json bun.lock ./
-COPY patches ./patches
 RUN bun install --frozen-lockfile --ignore-scripts
 
 COPY . .
 
-ARG VITE_CONVEX_URL=http://localhost:3210
-ARG VITE_CONVEX_SITE_URL=http://localhost:3211
-ARG VITE_AUTH_PASSWORD_ENABLED=true
+ARG VITE_INSTANT_APP_ID=
+ARG VITE_INSTANT_API_URI=http://localhost:8888
+ARG VITE_ADMIN_URL=http://localhost:8787
 ARG VITE_SELF_HOSTED=true
-# 0.0.0 / empty → resolve from nearest git tag at build (see RUN below).
 ARG VITE_APP_VERSION=0.0.0
 
-ENV VITE_CONVEX_URL=$VITE_CONVEX_URL \
-    VITE_CONVEX_SITE_URL=$VITE_CONVEX_SITE_URL \
-    VITE_AUTH_PASSWORD_ENABLED=$VITE_AUTH_PASSWORD_ENABLED \
+ENV VITE_INSTANT_APP_ID=$VITE_INSTANT_APP_ID \
+    VITE_INSTANT_API_URI=$VITE_INSTANT_API_URI \
+    VITE_ADMIN_URL=$VITE_ADMIN_URL \
     VITE_SELF_HOSTED=$VITE_SELF_HOSTED \
     VITE_APP_VERSION=$VITE_APP_VERSION \
     NODE_ENV=production \
@@ -52,9 +47,6 @@ ENV VITE_CONVEX_URL=$VITE_CONVEX_URL \
     NODE_OPTIONS=--max-old-space-size=8192 \
     UV_THREADPOOL_SIZE=2
 
-# Resolve version without requiring users to set APP_VERSION:
-# 1) explicit build-arg, 2) git tag (fetch tags for Portainer shallow clones),
-# 3) committed VERSION file (works even when .git has no tags).
 RUN set -eux; \
   VER="${VITE_APP_VERSION:-}"; \
   if [ -z "$VER" ] || [ "$VER" = "0.0.0" ]; then \
@@ -84,8 +76,8 @@ RUN set -eux; \
 FROM nginx:1.27-alpine AS web
 
 ARG PUBLIC_HOST=localhost
-ARG PORT=3210
-ARG SITE_PROXY_PORT=3211
+ARG INSTANT_PORT=8888
+ARG ADMIN_PORT=8787
 
 COPY docker/nginx.conf /etc/nginx/templates/default.conf.template
 COPY docker/self-host-env.template.js /self-host-env.template.js
@@ -95,13 +87,11 @@ COPY --from=web-build /app/dist /usr/share/nginx/html
 RUN chmod +x /web-entrypoint.sh
 
 ENV PUBLIC_HOST=$PUBLIC_HOST \
-    PORT=$PORT \
-    SITE_PROXY_PORT=$SITE_PROXY_PORT \
-    VITE_AUTH_PASSWORD_ENABLED=true \
+    INSTANT_PORT=$INSTANT_PORT \
+    ADMIN_PORT=$ADMIN_PORT \
     VITE_SELF_HOSTED=true \
     NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d \
-    # Only substitute our host/port vars — do not touch nginx $uri etc.
-    NGINX_ENVSUBST_FILTER=^(PUBLIC_HOST|PORT|SITE_PROXY_PORT)$
+    NGINX_ENVSUBST_FILTER=^(PUBLIC_HOST|INSTANT_PORT|ADMIN_PORT)$
 
 EXPOSE 80
 ENTRYPOINT ["/web-entrypoint.sh"]

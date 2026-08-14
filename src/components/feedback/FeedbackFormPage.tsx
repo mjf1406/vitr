@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useSubmitFeedback } from "@/hooks/feedback/useSubmitFeedback";
 import { useCurrentUser } from "@/hooks/user/useCurrentUser";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import {
   createFeedbackFormSchema,
   emptyFeedbackFormValues,

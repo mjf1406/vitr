@@ -10,7 +10,7 @@ import {
   permissionsFromRole,
   type ClassRole,
 } from "@/lib/permissions/classPermissions";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type ClassPermissionsProviderProps = {
   children: ReactNode;

@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
-import { KeyRound, SearchIcon, UsersIcon, XIcon } from "lucide-react";
+import { SearchIcon, UsersIcon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { ResetPasswordCredenza } from "@/components/admin/ResetPasswordCredenza";
 import { ErrorState } from "@/components/ui/error-state";
-import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyDescription,
@@ -20,31 +18,29 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminResetPassword } from "@/hooks/admin/useAdminResetPassword";
 import { useAdminUsers } from "@/hooks/admin/useAdminUsers";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type AdminUserRow = {
   _id: Id<"users">;
-  email: string;
+  email?: string;
   name?: string;
-  hasPassword: boolean;
+  isAppAdmin: boolean;
 };
 
 export function AdminUsersPage() {
   const { t } = useTranslation("admin");
   const usersQuery = useAdminUsers();
-  const resetPassword = useAdminResetPassword();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selected, setSelected] = useState<AdminUserRow | null>(null);
 
-  const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+  const users = useMemo(() => (usersQuery.data ?? []) as AdminUserRow[], [usersQuery.data]);
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return users;
     return users.filter((user) => {
       const name = user.name?.toLowerCase() ?? "";
-      return user.email.toLowerCase().includes(q) || name.includes(q);
+      const email = user.email?.toLowerCase() ?? "";
+      return email.includes(q) || name.includes(q);
     });
   }, [users, searchQuery]);
 
@@ -138,38 +134,9 @@ export function AdminUsersPage() {
                 <p className="truncate font-medium">{user.name?.trim() || t("unnamedUser")}</p>
                 <p className="truncate text-sm text-muted-foreground">{user.email}</p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                disabled={!user.hasPassword}
-                title={user.hasPassword ? undefined : t("noPasswordAccount")}
-                onClick={() => setSelected(user)}
-              >
-                <KeyRound data-icon="inline-start" />
-                {t("resetPassword")}
-              </Button>
             </li>
           ))}
         </ul>
-      ) : null}
-
-      {selected ? (
-        <ResetPasswordCredenza
-          open={selected !== null}
-          onOpenChange={(open) => {
-            if (!open) setSelected(null);
-          }}
-          email={selected.email}
-          onConfirm={async (newPassword) => {
-            await resetPassword.mutateAsync({
-              userId: selected._id,
-              newPassword,
-            });
-            setSelected(null);
-          }}
-        />
       ) : null}
     </div>
   );

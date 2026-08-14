@@ -1,21 +1,28 @@
 # Self-hosting (local Docker)
 
-Run the app on your machine with **no Convex Cloud, Polar, or Google OAuth**. Auth is email/password only, billing is disabled, and Convex is self-hosted using their wonderful [guide](https://github.com/get-convex/convex-backend/blob/main/self-hosted/README.md).
+Run the app on your machine with **no Instant Cloud or Polar**. Auth is Instant magic codes (Google optional if you configure it on the self-host dashboard). Billing is disabled. Instant runs as Postgres + server + MinIO.
 
 This stack is meant for **LAN / local** hosting (one machine or a few devices on your network). It is **not** intended for hosting in the cloud for several remote users — ports are exposed directly, with no reverse proxy or TLS terminator sitting in front of it.
 
-Clone-and-run and Portainer both use the same root [`docker-compose.yml`](../docker-compose.yml). Images for `web` and `deploy` are **built on the host**.
+Clone-and-run and Portainer both use the same root [`docker-compose.yml`](../docker-compose.yml). Images for `web` and `admin` are **built on the host**.
 
 ## Defaults
 
-| Service             | URL                         |
-| ------------------- | --------------------------- |
-| App                 | http://`<PUBLIC_HOST>`:8088 |
-| Convex API          | http://`<PUBLIC_HOST>`:3210 |
-| Convex HTTP actions | http://`<PUBLIC_HOST>`:3211 |
-| Convex dashboard    | http://`<PUBLIC_HOST>`:6791 |
+| Service           | URL                         |
+| ----------------- | --------------------------- |
+| App               | http://`<PUBLIC_HOST>`:8088 |
+| Instant API       | http://`<PUBLIC_HOST>`:8888 |
+| Instant dashboard | http://`<PUBLIC_HOST>`:3000 |
+| Admin API         | http://`<PUBLIC_HOST>`:8787 |
 
-Data persists in the Docker volume `convex-data`.
+Data persists in Docker volumes `backend-db`, `minio_data`, and `server_config`.
+
+After first boot, open the Instant dashboard (`:3000`), create an app, then set `INSTANT_APP_ID` / `INSTANT_APP_ADMIN_TOKEN` and push schema/perms:
+
+```bash
+INSTANT_CLI_API_URI=http://localhost:8888 bunx instant-cli push schema
+INSTANT_CLI_API_URI=http://localhost:8888 bunx instant-cli push perms
+```
 
 ## `PUBLIC_HOST`
 
@@ -28,9 +35,7 @@ Hostname or LAN IP that **browsers** use to reach the server (not a Docker servi
 
 ## `CLASS_PRESENCE_ENABLED`
 
-Self-host shows **who is online in a class** (header chip and green dots on member avatars). Enabled by default on Docker self-host and Electron. Set `CLASS_PRESENCE_ENABLED=false` in `.env` / Portainer to disable presence heartbeats and UI. Hosted cloud deployments never run presence (no DB reads/writes).
-
-The deploy service syncs this to Convex; the web container injects `VITE_CLASS_PRESENCE_ENABLED` for the SPA at runtime.
+Self-host shows **who is online in a class** (header chip and green dots on member avatars). Enabled by default on Docker self-host and Electron. Set `CLASS_PRESENCE_ENABLED=false` in `.env` / Portainer to disable presence. The web container injects `VITE_CLASS_PRESENCE_ENABLED` for the SPA at runtime.
 
 ## Option A — Clone and run
 
@@ -44,7 +49,7 @@ docker compose up -d --build
 ```
 
 ```bash
-docker compose logs -f deploy
+docker compose logs -f admin
 docker compose logs -f web
 docker compose down             # stop (keeps volume)
 docker compose down -v          # stop and wipe data
@@ -53,12 +58,12 @@ docker compose down -v          # stop and wipe data
 ## Option B — Portainer
 
 1. Stacks → **Add stack** → **Repository**
-2. Repository URL: `https://github.com/mjf1406/vctr`
+2. Repository URL: `https://github.com/mjf1406/vitr`
 3. Repository Reference: `refs/heads/master`
 4. Compose path: `docker-compose.yml`
 5. Environment variables → **Load variables from .env file** → upload [`example.env`](../example.env) (edit `PUBLIC_HOST` first if needed)
-6. Deploy and wait for the `web` **build** and `deploy` one-shot to finish
-7. Open `http://<PUBLIC_HOST>:8088` and create an email/password account (the **first** account becomes the instance admin)
+6. Deploy and wait for the `web` **build** to finish
+7. Open `http://<PUBLIC_HOST>:8088` and sign in with a magic code (the **first** account can be granted instance admin via the admin API)
 
 Default app port is **8088** (8080 is often used by qBittorrent and similar). Override with `WEB_PORT` if needed.
 
@@ -74,9 +79,7 @@ Portainer often reuses old layers/images. If a deploy fails or you pulled new gi
    docker image prune -f
    ```
 
-3. Redeploy the stack so `web` / `deploy` rebuild from the current Dockerfile.
-
-Deleting unused images frees **disk** and forces a clean rebuild — do that after Dockerfile changes.
+3. Redeploy the stack so `web` / `admin` rebuild from the current Dockerfile.
 
 ## Uninstall / wipe data
 
@@ -87,21 +90,13 @@ Wiping removes all classroom data (users, classes, uploads). A later deploy star
 ```bash
 cd <repo>
 docker compose down             # stop (keeps volume)
-docker compose down -v          # stop and wipe the convex-data volume
-```
-
-Optional: delete the host `.env`, and prune unused images/cache if you no longer need the build artifacts:
-
-```bash
-docker builder prune -f
-docker image prune -f
+docker compose down -v          # stop and wipe Instant volumes
 ```
 
 ### Portainer
 
 1. Remove the stack.
-2. To wipe data, also delete the Docker volume (typically `<stack-name>_convex-data`). Removing the stack alone keeps the volume.
-3. Optionally prune unused build cache/images on the host (same commands as above).
+2. To wipe data, also delete the Docker volumes (typically `<stack-name>_backend-db`, `_minio_data`, `_server_config`). Removing the stack alone keeps the volumes.
 
 ## Upgrading
 
@@ -113,16 +108,13 @@ The web image stamps its version at build time automatically — you do **not** 
 2. Nearest git tag (`git describe`, after fetching tags — covers Portainer shallow clones)
 3. Committed [`VERSION`](../VERSION) file (auto-updated by the Electron release workflow when you push a `v*` tag)
 
-Optional: set `APP_VERSION` (semver **without** a leading `v`) only to override. The banner stays off only when no version can be resolved (build log will warn and show `VITE_APP_VERSION=0.0.0`).
+Data lives in the Instant volumes — keep those volumes when rebuilding.
 
-Data lives in the `convex-data` volume — keep that volume when rebuilding.
-
-The `deploy` service pushes Convex functions when the deploy marker changes, then runs `internal.authzBackfill.syncCatalogRoles` (same as cloud `vp run deploy` → `perms-prod`) so role-catalog changes rematerialize. That marker includes a hash of `convex/` source, so backend code updates redeploy even when the app version is unchanged. If the SPA calls a function the backend does not know, rebuild/redeploy so `deploy` runs again:
+Push schema/perms after backend entity changes:
 
 ```bash
-docker compose up -d --build deploy web
-# or force one shot:
-docker compose run --rm deploy
+INSTANT_CLI_API_URI=http://localhost:8888 bunx instant-cli push schema
+INSTANT_CLI_API_URI=http://localhost:8888 bunx instant-cli push perms
 ```
 
 ### Docker Compose
@@ -134,56 +126,23 @@ git checkout v0.1.0   # or: git pull on the branch you track
 docker compose up -d --build
 ```
 
-Confirm the stack is healthy (`docker compose logs -f deploy` / `web`) and open the app. You should no longer see an update banner for that version. Check the `web` **build** log (not nginx access logs) for `Building with VITE_APP_VERSION=…` if the banner never appears.
-
 ### Portainer
 
 1. Stacks → your stack → **Editor** (or recreate from **Repository**).
 2. Pull the latest compose from the repo, or set **Repository Reference** to the release tag (e.g. `refs/tags/v0.1.0`).
 3. Leave `APP_VERSION` unset — the image resolves version from git tags or the committed `VERSION` file.
-4. **Update the stack** so `web` / `deploy` rebuild.
-
-If Portainer reuses stale layers after a Dockerfile or dependency change, follow [Clean rebuild after compose/Dockerfile changes](#clean-rebuild-after-composedockerfile-changes) (remove stack keeping the volume, prune build cache/images, redeploy).
-
-## Instance secret
-
-`INSTANCE_NAME` and `INSTANCE_SECRET` identify the Convex instance. Changing them after the first start invalidates the admin key and can strand data. The compose default secret is for **local-only** use. For any shared or exposed host, set a fresh secret (`openssl rand -hex 32`) before the first start.
+4. **Update the stack** so `web` / `admin` rebuild.
 
 ## What differs from cloud
 
-|          | Cloud                      | Self-host                   |
-| -------- | -------------------------- | --------------------------- |
-| Backend  | Convex Cloud               | Convex in Docker            |
-| Auth     | Google (optional password) | Password only               |
-| Billing  | Polar + trial              | Always entitled / Polar off |
-| SPA host | e.g. Cloudflare Pages      | nginx in Compose            |
+|                   | Cloud                  | Self-host                            |
+| ----------------- | ---------------------- | ------------------------------------ |
+| Backend           | Instant Cloud          | Instant in Docker (Postgres + MinIO) |
+| Auth              | Magic code + Google    | Magic code (Google optional)         |
+| Billing           | Polar + trial          | Always entitled / Polar off          |
+| SPA host          | e.g. Cloudflare Pages  | nginx in Compose                     |
+| Privileged writes | Admin server (`:8787`) | Admin container                      |
 
-## Instance admin (password resets)
+## Instance admin
 
-The **first** email/password account created on a fresh instance is granted the global `app_admin` role. That user sees **Admin** in the nav and can set a temporary password for any user who forgot theirs (all of that user’s sessions are signed out).
-
-Upgrading an existing instance that already has users (and no admin) — or recovering after losing the admin account — use the Convex CLI against the local deployment:
-
-```bash
-bunx convex run lib/admin:grantAppAdmin '{"userId":"<convex-user-id>"}'
-```
-
-(PowerShell: escape the JSON as `'{\"userId\":\"...\"}'`.)
-
-## Dashboard admin key
-
-Portainer names the project from the stack name (e.g. `classclarus`), so plain `docker compose exec` from your home directory often fails with “no configuration file provided”. Prefer the container name:
-
-```bash
-sudo docker exec classclarus-backend-1 cat /convex/data/admin_key
-```
-
-Or pass the Portainer project/stack name:
-
-```bash
-sudo docker compose -p classclarus exec backend cat /convex/data/admin_key
-```
-
-(If you used `docker compose` from a local clone, `docker compose exec backend cat /convex/data/admin_key` works inside that directory.)
-
-Paste that key into http://`<PUBLIC_HOST>`:6791 when prompted.
+The first user can be granted app-admin via `POST /api/admin/grant` (see `server/routes/admin.ts`). That user sees **Admin** in the nav. Password resets are not available — auth is magic codes.

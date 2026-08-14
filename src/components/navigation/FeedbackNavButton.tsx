@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { useConvexAuth } from "@convex-dev/auth/react";
 import { MessageSquareIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { isSelfHosted } from "@/lib/selfHosted";
+import { db } from "@/lib/instant/db";
 
 type FeedbackNavButtonProps = {
   className?: string;
@@ -14,7 +14,8 @@ type FeedbackNavButtonProps = {
 /** Cloud-only shortcut to the feedback form. Hidden when logged out or self-hosted. */
 export function FeedbackNavButton({ className }: FeedbackNavButtonProps) {
   const { t } = useTranslation("common");
-  const { isAuthenticated } = useConvexAuth();
+  const { user } = db.useAuth();
+  const isAuthenticated = Boolean(user);
   const label = t("feedback");
 
   if (!isAuthenticated || isSelfHosted()) {

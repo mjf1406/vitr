@@ -1,36 +1,53 @@
 import { useMemo } from "react";
-import { convexQuery } from "@convex-dev/react-query";
 
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
+import { db } from "@/lib/instant/db";
+import { first } from "@/lib/instant/first";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
 import { normalizeOnlineUserIds } from "@/lib/presence/presence";
-import { ONE_HOUR } from "@/lib/queryCache";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { PresenceDisplaySummary } from "@/lib/presence/presence";
+import type { Id } from "@/lib/ids";
 
-export function presenceDisplaySummariesQueryKey(
-  classId: Id<"classes">,
-  onlineUserIds: readonly string[],
-) {
-  return convexQuery(api.presence.displaySummaries, {
-    classId,
-    userIds: [...onlineUserIds],
-  }).queryKey;
-}
-
-/**
- * Cached display fields for online users in a class room.
- *
- * gcTime: ONE_HOUR — stable member avatars/names; Convex keeps mounted data live.
- */
 export function usePresenceDisplaySummaries(
   classId: Id<"classes">,
   onlineUserIds: ReadonlySet<string> | undefined,
 ) {
-  const normalizedUserIds = useMemo(() => normalizeOnlineUserIds(onlineUserIds), [onlineUserIds]);
-
-  return useAuthedQuery(
-    api.presence.displaySummaries,
-    normalizedUserIds.length > 0 ? { classId, userIds: normalizedUserIds } : "skip",
-    { gcTime: ONE_HOUR },
+  const ids = useMemo(() => normalizeOnlineUserIds(onlineUserIds), [onlineUserIds]);
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const query = db.useQuery(
+    user && ids.length > 0
+      ? {
+          classMemberships: {
+            $: { where: { "class.id": classId } },
+            user: { profile: { avatar: {} } },
+          },
+        }
+      : null,
   );
+
+  const data = useMemo<Array<PresenceDisplaySummary>>(() => {
+    if (!query.data) return [];
+    const wanted = new Set(ids);
+    return query.data.classMemberships.flatMap((membership) => {
+      const member = first(membership.user);
+      if (!member || !wanted.has(member.id)) return [];
+      const profile = first(member.profile);
+      const avatar = profile ? first(profile.avatar) : null;
+      return [
+        {
+          userId: member.id,
+          name: profile?.name ?? undefined,
+          image: sanitizeAvatarUrl(avatar?.url) ?? undefined,
+        },
+      ];
+    });
+  }, [ids, query.data]);
+
+  const isPending = isAuthLoading || query.isLoading;
+  return {
+    data,
+    isPending,
+    isLoading: isPending,
+    isError: Boolean(query.error),
+    error: query.error,
+  };
 }

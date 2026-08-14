@@ -83,7 +83,7 @@ jobs:
         id: brand
         shell: bash
         run: |
-          NAME=$(bun -e 'import { APP_CONFIG } from "./convex/appConfig.ts"; process.stdout.write(APP_CONFIG.name)')
+          NAME=$(bun -e 'import { APP_CONFIG } from "./shared/appConfig.ts"; process.stdout.write(APP_CONFIG.name)')
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "Artifact prefix: $NAME"
 
@@ -91,7 +91,7 @@ jobs:
         env:
           ELECTRON_PLATFORM: ${{ matrix.platform }}
           ELECTRON_ARCH: ${{ matrix.arch }}
-          # Higher GitHub API rate limit when downloading convex-local-backend
+          # Instant embed artifacts (jar extract may use Docker)
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bun scripts/electron-pack.mjs
 
@@ -122,7 +122,7 @@ jobs:
         id: brand
         shell: bash
         run: |
-          NAME=$(bun -e 'import { APP_CONFIG } from "./convex/appConfig.ts"; process.stdout.write(APP_CONFIG.name)')
+          NAME=$(bun -e 'import { APP_CONFIG } from "./shared/appConfig.ts"; process.stdout.write(APP_CONFIG.name)')
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: Download installers

@@ -7,7 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import type { Plugin, PluginOption } from "vite";
 
-import { APP_CONFIG } from "./convex/appConfig.js";
+import { APP_CONFIG } from "./shared/appConfig.js";
 
 /** Keep FOUC theme bootstrap in index.html aligned with STORAGE_KEYS.theme. */
 function injectAppThemeStorageKey(): Plugin {
@@ -33,29 +33,22 @@ export default defineConfig({
         command: "vp dev",
         cache: false,
       },
-      "dev:convex": {
-        command: "bunx convex dev",
+      "dev:admin": {
+        command: "bun server/index.ts",
         cache: false,
       },
-      /** Start web + Convex only (does not auto-run authz sync). */
+      /** Start web + admin API. Instant cloud/self-host must already be running. */
       ds: {
         command: "echo Both stopped.",
-        dependsOn: ["dev:web", "dev:convex"],
+        dependsOn: ["dev:web", "dev:admin"],
         cache: false,
       },
-      /** Re-materialize authz role permissions on the configured Convex **dev** deployment. */
-      perms: {
-        command: "bunx convex run internal.authzBackfill.syncCatalogRoles",
+      "push:schema": {
+        command: "bunx instant-cli push schema",
         cache: false,
       },
-      /** Same as `perms`, against the Convex **prod** deployment (`--prod`). */
-      "perms-prod": {
-        command: "bunx convex run --prod internal.authzBackfill.syncCatalogRoles",
-        cache: false,
-      },
-      /** Deploy Convex functions to prod, then sync authz catalog roles. */
-      deploy: {
-        command: "bunx convex deploy && vp run perms-prod",
+      "push:perms": {
+        command: "bunx instant-cli push perms",
         cache: false,
       },
     },

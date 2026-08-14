@@ -1,67 +1,69 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useConvexConnectionState } from "convex/react";
+
+import { db } from "@/lib/instant/db";
 
 export type ConnectionStatus = "connected" | "connecting" | "reconnecting" | "offline";
 
 const DISCONNECTED_DEBOUNCE_MS = 2000;
 
+type InstantConnectionStatus = "connecting" | "opened" | "authenticated" | "closed" | "errored";
+
 export function useConnectionStatus() {
-  const connectionState = useConvexConnectionState();
-  const { isWebSocketConnected, hasEverConnected } = connectionState;
-
-  const [status, setStatus] = useState<ConnectionStatus>(() => {
-    if (isWebSocketConnected) {
-      return "connected";
-    }
-    return hasEverConnected ? "reconnecting" : "connecting";
-  });
-
+  const [raw, setRaw] = useState<InstantConnectionStatus>("connecting");
+  const [status, setStatus] = useState<ConnectionStatus>("connecting");
+  const hasEverConnectedRef = useRef(false);
   const hasRealOutageRef = useRef(false);
   const disconnectTimerRef = useRef<number | null>(null);
   const [restoredNonce, setRestoredNonce] = useState(0);
 
-  const clearDisconnectTimer = () => {
+  useEffect(() => {
+    const subscribe = (
+      db as unknown as {
+        subscribeConnectionStatus?: (cb: (status: InstantConnectionStatus) => void) => () => void;
+      }
+    ).subscribeConnectionStatus;
+    if (!subscribe) {
+      setStatus("connected");
+      return;
+    }
+    return subscribe((next) => {
+      setRaw(next);
+    });
+  }, []);
+
+  useEffect(() => {
     if (disconnectTimerRef.current !== null) {
       window.clearTimeout(disconnectTimerRef.current);
       disconnectTimerRef.current = null;
     }
-  };
-
-  useEffect(() => {
-    // Always clear on render path changes.
-    clearDisconnectTimer();
-
-    if (isWebSocketConnected) {
+    const connected = raw === "authenticated" || raw === "opened";
+    if (connected) {
       if (hasRealOutageRef.current) {
         setRestoredNonce((n) => n + 1);
       }
       hasRealOutageRef.current = false;
+      hasEverConnectedRef.current = true;
       setStatus("connected");
       return;
     }
-
-    if (!hasEverConnected) {
+    if (!hasEverConnectedRef.current) {
       setStatus("connecting");
       return;
     }
-
-    // Disconnected after a successful initial connection: debounce the UI so
-    // brief blips don't show a warning.
     setStatus("reconnecting");
     disconnectTimerRef.current = window.setTimeout(() => {
       hasRealOutageRef.current = true;
       setStatus("offline");
       disconnectTimerRef.current = null;
     }, DISCONNECTED_DEBOUNCE_MS);
-  }, [hasEverConnected, isWebSocketConnected]);
+  }, [raw]);
 
-  // Avoid re-renders from unrelated fields.
   return useMemo(
     () => ({
       status,
       restoredNonce,
-      connectionState,
+      connectionState: { status: raw },
     }),
-    [status, restoredNonce, connectionState],
+    [status, restoredNonce, raw],
   );
 }

@@ -12,6 +12,7 @@ dist
 dist-ssr
 dist-electron
 release
+resources/instant-backend
 resources/convex-backend
 resources/convex-backend-bundle
 resources/deploy-project

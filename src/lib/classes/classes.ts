@@ -1,12 +1,23 @@
-import type { FunctionReturnType } from "convex/server";
-
-import { api } from "../../../convex/_generated/api";
+import type { Id } from "@/lib/ids";
+import type { ClassRole } from "@/lib/permissions/classPermissions";
 
 /** Class document from get / mutations (no membership role). */
-export type ClassDoc = NonNullable<FunctionReturnType<typeof api.classes.get>>;
+export type ClassDoc = {
+  _id: Id<"classes">;
+  _creationTime: number;
+  ownerId: Id<"users">;
+  name: string;
+  year: number;
+  description?: string;
+  icon?: string;
+  bannerFileId?: string;
+  updatedAt: number;
+  archivedAt?: number;
+};
 
 /** Home-list class with the viewer's membership role for O(1) UI gating. */
-export type ClassPublic = FunctionReturnType<typeof api.classes.listMine>[number] & {
+export type ClassPublic = ClassDoc & {
+  role: ClassRole;
   /** Present when optimistic create is in flight. */
   _pending?: boolean;
 };

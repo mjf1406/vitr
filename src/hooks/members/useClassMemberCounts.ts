@@ -1,14 +1,52 @@
-import { convexQuery } from "@convex-dev/react-query";
+import { useMemo } from "react";
 
-import type { Id } from "../../../convex/_generated/dataModel";
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
-import { ONE_HOUR } from "@/lib/queryCache";
-import { api } from "../../../convex/_generated/api";
-
-export function classMemberCountsQueryKey(classId: Id<"classes">) {
-  return convexQuery(api.members.countsByRole, { classId }).queryKey;
-}
+import { db } from "@/lib/instant/db";
+import type { Id } from "@/lib/ids";
+import type { ClassMemberCounts } from "@/lib/members/members";
+import { memberListRoleFor } from "@/lib/members/members";
+import type { ClassMemberPublic } from "@/lib/members/members";
 
 export function useClassMemberCounts(classId: Id<"classes">) {
-  return useAuthedQuery(api.members.countsByRole, { classId }, { gcTime: ONE_HOUR });
+  const { user, isLoading: isAuthLoading } = db.useAuth();
+  const query = db.useQuery(
+    user
+      ? {
+          classMemberships: {
+            $: { where: { "class.id": classId } },
+          },
+        }
+      : null,
+  );
+
+  const data = useMemo<ClassMemberCounts>(() => {
+    const counts: ClassMemberCounts = {
+      teacher: 0,
+      assistant_teacher: 0,
+      student: 0,
+      guardian: 0,
+    };
+    if (!query.data) return counts;
+    for (const membership of query.data.classMemberships) {
+      if (membership.suspended) continue;
+      const listRole = memberListRoleFor(membership.role as ClassMemberPublic["role"]);
+      if (
+        listRole === "teacher" ||
+        listRole === "assistant_teacher" ||
+        listRole === "student" ||
+        listRole === "guardian"
+      ) {
+        counts[listRole] = (counts[listRole] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [query.data]);
+
+  const isPending = isAuthLoading || query.isLoading;
+  return {
+    data,
+    isPending,
+    isLoading: isPending,
+    isError: Boolean(query.error),
+    error: query.error,
+  };
 }

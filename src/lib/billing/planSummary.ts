@@ -38,7 +38,7 @@ function planName(subscription: PlanSummarySubscription | null, t: PlanSummaryIn
 
 /**
  * Build compact + one-line plan copy from entitlement + subscription.
- * Keep `Date.now()` out of Convex — call this on the client with derived entitlement.
+ * Keep `Date.now()` out of Instant queries — call this on the client with derived entitlement.
  */
 export function buildPlanSummary({
   entitlement,

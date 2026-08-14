@@ -30,7 +30,7 @@ export function AdminFeedbackPage() {
   const listQuery = useFeedbackAdminList(listArgs);
   const setArchivedMutation = useSetFeedbackArchived(listArgs);
 
-  const rows = (listQuery.data ?? []) as AdminFeedbackRow[];
+  const rows = listQuery.data ?? [];
   const columns = useMemo(() => createAdminFeedbackColumns(t), [t]);
 
   const isPending = listQuery.isPending || listQuery.isAuthLoading;
@@ -66,7 +66,7 @@ export function AdminFeedbackPage() {
       {listQuery.isError ? (
         <ErrorState
           title={t("adminLoadFailed")}
-          description={listQuery.error.message}
+          description={listQuery.error?.message}
           onRetry={() => {
             void listQuery.refetch();
           }}

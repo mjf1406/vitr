@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { emptyUsageStatsSummary } from "../../../convex/lib/usageTracking";
+import { emptyUsageStatsSummary } from "../../../shared/usageTracking";
 import { bumpDesktopDownload, bumpSelfHostClick } from "./usageStatsOptimistic";
 
 describe("usageStatsOptimistic", () => {

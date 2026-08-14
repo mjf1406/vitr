@@ -13,7 +13,7 @@ import { useOwnedClasses } from "@/hooks/classes/useOwnedClasses";
 import { useTransferOwnership } from "@/hooks/classes/useTransferOwnership";
 import { useAccountDeletionBlockers } from "@/hooks/user/useAccountDeletionBlockers";
 import { useDeleteAccount } from "@/hooks/user/useDeleteAccount";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type DangerZoneCardProps = {
   email: string | null | undefined;

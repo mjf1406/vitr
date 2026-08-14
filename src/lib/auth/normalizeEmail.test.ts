@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { normalizeEmail } from "../../../convex/lib/trial";
+import { normalizeEmail } from "../../../shared/trial";
 
 describe("normalizeEmail", () => {
   test("lowercases and trims", () => {

@@ -9,7 +9,7 @@ import { FileDropzone } from "@/components/upload/FileDropzone";
 import { useClass } from "@/hooks/classes/useClass";
 import { useSetClassBanner } from "@/hooks/classes/useSetClassBanner";
 import { useFileBytes } from "@/hooks/files/useFileBytes";
-import type { Id } from "../../../../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 export const Route = createFileRoute("/_authenticated/_class/class/$classId/")({
   component: function ClassDashboardPage() {

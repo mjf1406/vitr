@@ -1,9 +1,8 @@
 /**
  * Electron Builder config — productName / appId / artifacts derived from APP_CONFIG.
- * Loaded via Node by electron-builder; bun evaluates convex/appConfig.ts.
+ * Loaded via Node by electron-builder; bun evaluates shared/appConfig.ts.
  */
 import { execFileSync } from "node:child_process";
-import { cp, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,7 +13,7 @@ function loadAppConfig() {
     process.execPath.includes("bun") ? process.execPath : "bun",
     [
       "-e",
-      'import { APP_CONFIG } from "./convex/appConfig.ts"; process.stdout.write(JSON.stringify(APP_CONFIG))',
+      'import { APP_CONFIG } from "./shared/appConfig.ts"; process.stdout.write(JSON.stringify(APP_CONFIG))',
     ],
     { encoding: "utf8", cwd: root },
   );
@@ -47,8 +46,8 @@ const config = {
   files: ["dist-electron/**/*", "package.json"],
   extraResources: [
     {
-      from: "resources/convex-backend-bundle",
-      to: "convex-backend",
+      from: "resources/instant-backend",
+      to: "instant-backend",
       filter: ["**/*"],
     },
     {
@@ -57,19 +56,6 @@ const config = {
       filter: ["**/*"],
     },
   ],
-  /**
-   * Copy deploy-project (including node_modules) after pack.
-   * electron-builder's FileSet filters drop nested node_modules / honor ignore files,
-   * which left the Convex CLI missing at runtime ("convex exit 1").
-   */
-  afterPack: async (context) => {
-    const src = path.join(context.packager.projectDir, "resources", "deploy-project");
-    const resourcesDir = context.packager.getResourcesDir(context.appOutDir);
-    const dest = path.join(resourcesDir, "deploy-project");
-    await rm(dest, { recursive: true, force: true });
-    await cp(src, dest, { recursive: true });
-    console.log(`afterPack: copied deploy-project → ${dest}`);
-  },
   asar: true,
   asarUnpack: ["**/*.node"],
   win: {

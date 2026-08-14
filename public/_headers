@@ -7,7 +7,7 @@
   Cross-Origin-Resource-Policy: same-origin
   X-Permitted-Cross-Domain-Policies: none
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://*.convex.cloud https://*.convex.site wss://*.convex.cloud https://*.polar.sh https://api.polar.sh https://sandbox-api.polar.sh; frame-src 'self' https://*.polar.sh https://polar.sh; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https://*.googleusercontent.com https://*.amazonaws.com; font-src 'self' data:; connect-src 'self' https://api.instantdb.com wss://api.instantdb.com http://localhost:8888 ws://localhost:8888 http://localhost:8787 https://*.polar.sh https://api.polar.sh https://sandbox-api.polar.sh; frame-src 'self' https://*.polar.sh https://polar.sh; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests
 
 /
   Cache-Control: no-cache

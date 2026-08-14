@@ -1,8 +1,21 @@
-import { api } from "../../../convex/_generated/api";
-import { useAuthedQuery } from "@/hooks/useAuthedQuery";
+import { useAdminQuery } from "@/hooks/useAdminQuery";
+import { isSelfHosted } from "@/lib/selfHosted";
 
-const ONE_MINUTE = 60_000;
+type AdminUsersResponse = {
+  users: Array<{
+    _id: string;
+    email?: string;
+    name?: string;
+    isAppAdmin: boolean;
+    createdAt?: number;
+  }>;
+};
 
 export function useAdminUsers() {
-  return useAuthedQuery(api.adminUsers.listUsers, {}, { gcTime: ONE_MINUTE });
+  const enabled = isSelfHosted();
+  const query = useAdminQuery<AdminUsersResponse>(enabled ? "/api/admin/users" : null);
+  return {
+    ...query,
+    data: query.data?.users,
+  };
 }

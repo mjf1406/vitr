@@ -23,7 +23,7 @@ import { useRevokeJoinCode } from "@/hooks/invitations/useRevokeJoinCode";
 import type { CreateJoinCodeFormValues } from "@/lib/invitations/joinCodeFormSchema";
 import { assignableJoinCodeRoles } from "@/lib/invitations/joinCodeFormSchema";
 import type { JoinCodePublic } from "@/lib/invitations/joinCodes";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 const LIST_NOW_REFRESH_MS = 30_000;
 

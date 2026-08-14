@@ -1,6 +1,4 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useAuthActions, useConvexAuth } from "@convex-dev/auth/react";
-import { useQueryClient } from "@tanstack/react-query";
 import { ChevronsUpDown, CreditCard, LogOut, Settings, Shield, Wallet } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,12 +6,12 @@ import { useTranslation } from "react-i18next";
 import { useIsAppAdmin } from "@/hooks/admin/useIsAppAdmin";
 import { useEntitlement } from "@/hooks/billing/useEntitlement";
 import { useIsFeedbackAdmin } from "@/hooks/feedback/useIsFeedbackAdmin";
-import { removeAllFileBytesQueries } from "@/hooks/files/useFileBytes";
 import { useCurrentUser } from "@/hooks/user/useCurrentUser";
 import { buildPlanSummary } from "@/lib/billing/planSummary";
 import { isSelfHosted } from "@/lib/selfHosted";
 import { getDisplayName, getInitials } from "@/lib/user/userDisplay";
-import { sanitizeAvatarUrl } from "../../../convex/lib/avatarUrl";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
+import { db } from "@/lib/instant/db";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,20 +32,17 @@ type NavUserProps = {
 
 function useAccountMenuState() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { isLoading, isAuthenticated } = useConvexAuth();
+  const { isLoading, user: authUser } = db.useAuth();
   const { data: user } = useCurrentUser();
-  const { signOut } = useAuthActions();
 
   const handleSignOut = async () => {
-    removeAllFileBytesQueries(queryClient);
-    await signOut();
+    await db.auth.signOut();
     await navigate({ to: "/login" });
   };
 
   return {
     isLoading,
-    isAuthenticated,
+    isAuthenticated: Boolean(authUser),
     user,
     signOut: handleSignOut,
   };

@@ -4,7 +4,7 @@ Follow this after cloning the template into a **new** git remote. Paths are rela
 
 **Automated start:** run `bun run post-clone` to rewrite brand identity, write `.env.example`, optionally install deps, and check off the items it completed. Then finish the remaining boxes here.
 
-Do **not** reuse the template’s Convex deployment or copy `.env` / `.env.local` secrets from another machine.
+Do **not** reuse the template’s Instant app or copy `.env` / `.env.local` secrets from another machine.
 
 ---
 
@@ -24,7 +24,7 @@ Do **not** reuse the template’s Convex deployment or copy `.env` / `.env.local
 
 <!-- clone:identity-app-config -->
 
-- [ ] `convex/appConfig.ts` fields set for the new product (`name`, `slug`, URLs, `authzTenantId`, …)
+- [ ] `shared/appConfig.ts` fields set for the new product (`name`, `slug`, URLs, …)
 
 <!-- clone:identity-title -->
 
@@ -36,7 +36,7 @@ Do **not** reuse the template’s Convex deployment or copy `.env` / `.env.local
 
 <!-- clone:identity-self-host-docs -->
 
-- [ ] `docs/SELF_HOSTING.md` Portainer/repo examples retargeted (not `mjf1406/vctr` / `classclarus-*`)
+- [ ] `docs/SELF_HOSTING.md` Portainer/repo examples retargeted (not `mjf1406/vitr` / `classclarus-*`)
 
 <!-- clone:identity-compose -->
 
@@ -69,122 +69,81 @@ vp install
 
 ---
 
-## 3. Convex (new project)
+## 3. InstantDB (new app)
 
-This template already has functions under `convex/`. You still need a **fresh** deployment.
+This template already has `instant.schema.ts` and `instant.perms.ts`. You still need a **fresh** Instant app.
 
 ```bash
-bunx convex dev
+bunx instant-cli login
+bunx instant-cli init-without-files --title <APP_NAME>
+bunx instant-cli push schema
+bunx instant-cli push perms
 ```
 
-<!-- clone:convex-new-project -->
+<!-- clone:instant-new-app -->
 
-- [ ] Logged into Convex; chose **create a new project** (not the template’s deployment)
+- [ ] Logged into Instant; created a **new** app (not the template’s)
 
-<!-- clone:convex-env-local -->
+<!-- clone:instant-env-local -->
 
-- [ ] `.env.local` has `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL`
+- [ ] `.env.local` has `VITE_INSTANT_APP_ID`, `INSTANT_APP_ID`, `INSTANT_APP_ADMIN_TOKEN` (and `VITE_INSTANT_API_URI` / `INSTANT_API_URI` for self-host)
 
-<!-- clone:convex-dev-running -->
+<!-- clone:instant-dev-running -->
 
-- [ ] Left `bunx convex dev` running (or use `vp run ds` for web + Convex)
+- [ ] Left `vp run ds` running (web + admin API). Instant cloud or self-host must already be reachable.
 
-Already wired: `convex/schema.ts`, `convex/convex.config.ts`, `convex/http.ts` (auth + `/polar/events`), `src/main.tsx`.
+Already wired: `instant.schema.ts`, `instant.perms.ts`, `instant.config.ts`, `src/main.tsx`, `server/`.
 
 ---
 
-## 4. Convex Auth
+## 4. Auth (magic code + Google)
 
-Auth source files exist (`convex/auth.ts`, `convex/auth.config.ts`). The new deployment still needs keys + `SITE_URL`.
+Auth is Instant magic codes plus optional Google OAuth. Email/password is not used.
 
-```bash
-bunx @convex-dev/auth
-```
+<!-- clone:auth-magic-code -->
 
-<!-- clone:auth-site-url -->
-
-- [ ] Set `SITE_URL` to the SPA origin (usually `http://localhost:5173`) — not the Convex `.cloud` / `.site` URL
-
-<!-- clone:auth-jwt -->
-
-- [ ] Allowed generation of `JWT_PRIVATE_KEY` and `JWKS` on this deployment
-
-<!-- clone:auth-keep-sources -->
-
-- [ ] Skipped regenerating auth source files if the CLI offered (keep this template’s versions)
-
-Verify with `bunx convex env list` or the Convex dashboard → Settings → Environment Variables.
-
-Production later: `bunx @convex-dev/auth --prod`.
+- [ ] Magic-code sign-in works against the new Instant app
 
 ---
 
 ## 5. Google OAuth
 
-Provider is registered in `convex/auth.ts`. Secrets are **`AUTH_GOOGLE_ID`** / **`AUTH_GOOGLE_SECRET`** on the Convex deployment (not Vite).
+Configure a Google client in the Instant dashboard. The SPA uses `db.auth.createAuthorizationURL` with client name `VITE_INSTANT_GOOGLE_CLIENT_NAME` (default `google-web`).
 
 1. Google Cloud Console → OAuth consent screen (match new brand).
 2. Credentials → OAuth client ID (Web application).
 3. Authorized JavaScript origins: `http://localhost:5173` and production SPA origin (`APP_CONFIG.appUrl`).
-4. Authorized redirect URI (exact):
-
-   ```text
-   {CONVEX_SITE_URL}/api/auth/callback/google
-   ```
-
-   Use `VITE_CONVEX_SITE_URL` from `.env.local` (same host as Convex `CONVEX_SITE_URL`).
-
-```bash
-bunx convex env set AUTH_GOOGLE_ID "<client-id>.apps.googleusercontent.com"
-bunx convex env set AUTH_GOOGLE_SECRET "<client-secret>"
-```
+4. Authorized redirect URI: Instant’s callback for that client (from the Instant dashboard).
 
 <!-- clone:google-credentials -->
 
-- [ ] `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET` set on this deployment
+- [ ] Google client registered in Instant; `VITE_INSTANT_GOOGLE_CLIENT_NAME` matches
 
 <!-- clone:google-redirect -->
 
-- [ ] Redirect URI matches `{CONVEX_SITE_URL}/api/auth/callback/google`
-
-Optional password UI (cloud/dev): set `VITE_AUTH_PASSWORD_ENABLED=true` in `.env.local`. Self-host enables password auth automatically.
+- [ ] Redirect URI matches Instant’s Google callback
 
 ---
 
 ## 6. Billing (Polar)
 
-Subscriptions use `@convex-dev/polar`. Trial length is app-managed via `APP_CONFIG.trial` (not a Polar-native trial). Empty Polar credentials throw — set sandbox env for local/dev.
+Subscriptions use `@polar-sh/sdk` on the Bun admin server. Trial length is app-managed via `APP_CONFIG.trial` (not a Polar-native trial). Empty Polar credentials throw — set sandbox env for local/dev.
 
-**Create-only entitlement:** paid gate is for creating classes (`entitledMutation`); membership and day-to-day class ops use `class*` / `authed*` wrappers (no entitlement lockout for existing members).
+**Create-only entitlement:** paid gate is for creating classes; membership and day-to-day class ops use Instant CEL + roles.
 
 1. Create a [Polar](https://polar.sh) org (**sandbox** while developing).
 2. Create two subscription products (example UI copy: **USD 3**/mo, **USD 30**/yr). If prices differ, update `billing.monthlyPrice` / `billing.yearlyPrice` in **every** locale under `src/i18n/resources/`.
 3. Org access token with products/subscriptions/customers/checkouts/portal scopes.
-4. Webhook at `{CONVEX_SITE_URL}/polar/events` for `product.created`, `product.updated`, `subscription.created`, `subscription.updated`.
+4. Webhook at `{VITE_ADMIN_URL}/api/billing/webhook` for `product.created`, `product.updated`, `subscription.created`, `subscription.updated`.
 
-```bash
-bunx convex env set POLAR_SERVER sandbox
-bunx convex env set POLAR_SANDBOX_ACCESS_TOKEN "<sandbox-org-token>"
-bunx convex env set POLAR_SANDBOX_WEBHOOK_SECRET "<sandbox-webhook-secret>"
-bunx convex env set POLAR_PRODUCT_MONTHLY_ID "<polar-monthly-product-id>"
-bunx convex env set POLAR_PRODUCT_YEARLY_ID "<polar-yearly-product-id>"
-```
+Set on the **admin server** (`.env.local` / Docker `admin` service):
 
-Grant yourself `app_admin` after first sign-in (`users._id` from the dashboard):
-
-```powershell
-# PowerShell
-bunx convex run lib/admin:grantAppAdmin '{\"userId\":\"<convex-user-id>\"}'
-```
-
-```bash
-# bash / zsh
-bunx convex run lib/admin:grantAppAdmin '{"userId":"<convex-user-id>"}'
-```
-
-```bash
-bunx convex run polar:syncProducts
-bunx convex run polar:billingHealth
+```text
+POLAR_ACCESS_TOKEN
+POLAR_WEBHOOK_SECRET
+POLAR_ORGANIZATION_ID
+POLAR_MONTHLY_PRODUCT_ID
+POLAR_YEARLY_PRODUCT_ID
 ```
 
 <!-- clone:polar-products -->
@@ -193,13 +152,9 @@ bunx convex run polar:billingHealth
 
 <!-- clone:polar-env -->
 
-- [ ] Convex Polar env vars set (`POLAR_SERVER`, sandbox token/secret, both product IDs)
+- [ ] Admin-server Polar env vars set (token/secret, org id, both product IDs)
 
-<!-- clone:polar-admin -->
-
-- [ ] Granted `app_admin` and ran `polar:syncProducts` / verified `polar:billingHealth`
-
-Checkout return URLs are built server-side from `SITE_URL` + `/billing`.
+Checkout return URLs are built server-side from the SPA origin + `/billing`.
 
 ---
 
@@ -224,27 +179,17 @@ bunx --bun shadcn@latest apply <preset-code> --only theme,font
 
 Do this **after** auth + branding smoke-test. ClassClarus-style clones can keep most of this and only retarget brand/URLs/prices.
 
-See `convex/lib/authzModel.ts`, `convex/schema.ts`, routes under `src/routes/_authenticated/_class/`, and feature folders under `src/components/classes|members|invitations`.
+See `shared/roles.ts`, `instant.schema.ts`, `instant.perms.ts`, routes under `src/routes/_authenticated/_class/`, and feature folders under `src/components/classes|members|invitations`.
 
-After changing the role/permission catalog, sync rematerialized roles:
-
-```bash
-vp run perms          # dev
-vp run perms-prod     # prod
-# or: bunx convex run internal.authzBackfill.syncCatalogRoles
-```
-
-Owners get a **Permissions** page for fine-grained staff overrides (`permissions:manage`). Class online presence is on by default for Docker self-host and Electron (`CLASS_PRESENCE_ENABLED=false` to disable; hosted cloud stays off). Keep analytics aggregates (`usageByKind`, download OS, github clones) unless you deliberately remove them — document retained env vars.
+Class access is a role on `classMemberships`. There is no Permissions page or per-permission overrides. Privileged writes go through `server/`.
 
 <!-- clone:domain-authz -->
 
-- [ ] Redefined permissions/roles in `authzModel.ts` for the new domain (or kept ClassClarus)
-- [ ] Ran `vp run perms` after catalog changes
-- [ ] Confirmed Permissions page / overrides still match your roles (or removed that route)
+- [ ] Redefined roles in `shared/roles.ts` and CEL in `instant.perms.ts` for the new domain (or kept ClassClarus)
 
 <!-- clone:domain-surface -->
 
-- [ ] Replaced or removed example tables/functions/routes/components (if not keeping classroom)
+- [ ] Replaced or removed example entities/routes/components (if not keeping classroom)
 
 <!-- clone:domain-i18n -->
 
@@ -258,16 +203,15 @@ Prefer verifying login/brand/theme on the example app **before** a large domain 
 
 ```bash
 vp run ds
-# or: bunx convex dev  +  vp dev
 ```
 
 <!-- clone:verify-load -->
 
-- [ ] App loads against the **new** `VITE_CONVEX_URL`
+- [ ] App loads against the **new** `VITE_INSTANT_APP_ID`
 
 <!-- clone:verify-auth -->
 
-- [ ] Google sign-in completes (consent → redirect → authenticated shell)
+- [ ] Magic-code and/or Google sign-in completes (authenticated shell)
 
 <!-- clone:verify-brand -->
 
@@ -279,7 +223,7 @@ vp run ds
 
 <!-- clone:verify-billing -->
 
-- [ ] Billing page loads products after `polar:syncProducts`
+- [ ] Billing page loads products from the admin server
 
 <!-- clone:verify-check -->
 
@@ -289,38 +233,34 @@ vp run ds
 
 ## 10. Production (when ready)
 
-<!-- clone:prod-convex -->
+<!-- clone:prod-instant -->
 
-- [ ] Deploy Convex prod (`vp run deploy` or `bunx convex deploy` + `vp run perms-prod`) + `bunx @convex-dev/auth --prod`
+- [ ] Instant prod app + `instant-cli push schema` / `push perms`
 
 <!-- clone:prod-google -->
 
-- [ ] Prod Google OAuth origins + secrets + redirect URI
+- [ ] Prod Google OAuth origins + Instant client + redirect URI
 
 <!-- clone:prod-polar -->
 
-- [ ] `POLAR_SERVER=production` + prod Polar token/secret/product IDs + webhook
-
-<!-- clone:prod-trial -->
-
-- [ ] After first deploy with trial jobs: `bunx convex run trialBackfill:scheduleExpiryJobs`
+- [ ] Prod Polar token/secret/product IDs + webhook to the admin server
 
 <!-- clone:prod-urls -->
 
-- [ ] `APP_CONFIG` production URLs set; SPA built with prod `VITE_CONVEX_*`
+- [ ] `APP_CONFIG` production URLs set; SPA built with prod `VITE_INSTANT_*`
 
 <!-- clone:prod-host -->
 
-- [ ] Host serves `public/_headers` (CSP); build uses prod Convex Vite env
+- [ ] Host serves `public/_headers` (CSP); build uses prod Instant Vite env
 
-Build (Cloudflare Pages example): command `bun run build`, output `dist`, env `VITE_CONVEX_URL` + `VITE_CONVEX_SITE_URL` for the **prod** deployment.
+Build (Cloudflare Pages example): command `bun run build`, output `dist`, env `VITE_INSTANT_APP_ID` + `VITE_INSTANT_API_URI` + `VITE_ADMIN_URL` for the **prod** deployment.
 
 ---
 
 ## Env quick reference
 
-Vite / `.env.local` (from `convex dev`): `CONVEX_DEPLOYMENT`, `VITE_CONVEX_URL`, `VITE_CONVEX_SITE_URL`, optional `VITE_AUTH_PASSWORD_ENABLED`.
+Vite / `.env.local`: `VITE_INSTANT_APP_ID`, `VITE_INSTANT_API_URI`, `VITE_ADMIN_URL`, optional `VITE_INSTANT_GOOGLE_CLIENT_NAME`.
 
-Convex deployment (`bunx convex env set`): `SITE_URL`, `JWT_PRIVATE_KEY`, `JWKS`, `AUTH_GOOGLE_*`, Polar vars, optional usage-tracking vars. See [`.env.example`](./.env.example).
+Admin server: `INSTANT_APP_ID`, `INSTANT_APP_ADMIN_TOKEN`, `INSTANT_API_URI`, Polar vars. See [`.env.example`](./.env.example).
 
-Polar secrets belong on the **Convex deployment**, not in Vite.
+Polar secrets belong on the **admin server**, not in Vite.

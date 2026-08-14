@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUsageStats, type UsageStatsSummary } from "@/hooks/billing/useUsageStats";
-import type { StatsPeriod, UsageChip } from "../../../convex/lib/usageTracking";
+import type { StatsPeriod, UsageChip } from "../../../shared/usageTracking";
 
 const POPOVER_PERIODS: readonly StatsPeriod[] = ["week", "month", "year", "allTime"];
 

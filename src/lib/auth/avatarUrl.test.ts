@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { sanitizeAvatarUrl } from "../../../convex/lib/avatarUrl";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
 
 describe("sanitizeAvatarUrl", () => {
   test("allows https googleusercontent hosts", () => {
@@ -12,12 +12,15 @@ describe("sanitizeAvatarUrl", () => {
     );
   });
 
-  test("allows Convex storage bearer URLs on http and https", () => {
-    expect(sanitizeAvatarUrl("https://happy-animal-123.convex.cloud/api/storage/kg2abc")).toBe(
-      "https://happy-animal-123.convex.cloud/api/storage/kg2abc",
+  test("allows Instant storage and LAN self-host URLs", () => {
+    expect(sanitizeAvatarUrl("https://api.instantdb.com/storage/kg2abc")).toBe(
+      "https://api.instantdb.com/storage/kg2abc",
     );
-    expect(sanitizeAvatarUrl("http://192.168.1.10:3211/api/storage/kg2abc")).toBe(
-      "http://192.168.1.10:3211/api/storage/kg2abc",
+    expect(sanitizeAvatarUrl("http://127.0.0.1:8888/files/kg2abc")).toBe(
+      "http://127.0.0.1:8888/files/kg2abc",
+    );
+    expect(sanitizeAvatarUrl("http://192.168.1.10:8888/files/kg2abc")).toBe(
+      "http://192.168.1.10:8888/files/kg2abc",
     );
   });
 

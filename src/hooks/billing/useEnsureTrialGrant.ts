@@ -1,12 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
-import { useConvexMutation } from "@convex-dev/react-query";
-
-import { api } from "../../../convex/_generated/api";
+import { adminPost } from "@/lib/api/admin";
+import { useAsyncAction } from "@/hooks/useAsyncAction";
 
 export function useEnsureTrialGrant() {
-  const ensureTrialGrant = useConvexMutation(api.billing.ensureTrialGrant);
-
-  return useMutation({
-    mutationFn: () => ensureTrialGrant({}),
-  });
+  return useAsyncAction(() => adminPost("/api/account/bootstrap"));
 }

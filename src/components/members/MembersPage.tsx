@@ -29,7 +29,7 @@ import { useSetGuardianStudentLinks } from "@/hooks/members/useSetGuardianStuden
 import { useCurrentUser } from "@/hooks/user/useCurrentUser";
 import type { ClassMemberPublic, LinkedStudentPublic, MemberListRole } from "@/lib/members/members";
 import { getDisplayName } from "@/lib/user/userDisplay";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type MembersPageProps = {
   classId: Id<"classes">;

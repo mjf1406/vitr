@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,7 @@ import { useUpdateDisplayName } from "@/hooks/user/useUpdateDisplayName";
 import { isSelfHosted } from "@/lib/selfHosted";
 import { getDisplayName, getInitials } from "@/lib/user/userDisplay";
 import { splitFullName } from "@/lib/user/userName";
-import { sanitizeAvatarUrl } from "../../../convex/lib/avatarUrl";
+import { sanitizeAvatarUrl } from "../../../shared/avatarUrl";
 
 type ProfileUser = {
   _id: string;

@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, test, vi } from "vite-plus/test";
 
-import { APP_CONFIG } from "../../../convex/appConfig";
-import {
-  isAllowedAppOrigin,
-  resolveAppOrigin,
-  resolveAppUrl,
-} from "../../../convex/lib/billingGuards";
+import { APP_CONFIG } from "../../../shared/appConfig";
+import { isAllowedAppOrigin, resolveAppOrigin, resolveAppUrl } from "../../../shared/billingGuards";
 
 describe("billingGuards URL helpers", () => {
   afterEach(() => {

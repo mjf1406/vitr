@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vite-plus/test";
 
-import { normalizeEmail } from "../../../convex/lib/trial";
-import { scrubDetail } from "../../../convex/lib/polarErrors";
+import { normalizeEmail } from "../../../shared/trial";
+import { scrubDetail } from "../../../shared/polarErrors";
 
 describe("normalizeEmail", () => {
   test("lowercases and strips gmail aliases", () => {

@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTrackDesktopDownload } from "@/hooks/billing/useTrackDesktopDownload";
 import { DESKTOP_DOWNLOADS } from "@/lib/desktopDownloads";
-import type { DesktopOs } from "../../../convex/lib/usageTracking";
+import type { DesktopOs } from "../../../shared/usageTracking";
 
 function WindowsIcon(props: SVGProps<SVGSVGElement>) {
   return (

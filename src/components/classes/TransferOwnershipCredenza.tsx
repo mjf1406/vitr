@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEligibleOwners } from "@/hooks/classes/useEligibleOwners";
-import type { Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 
 type TransferOwnershipCredenzaProps = {
   open: boolean;

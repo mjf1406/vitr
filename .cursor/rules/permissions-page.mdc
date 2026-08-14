@@ -1,34 +1,31 @@
 ---
-description: Keep new capabilities on the class Permissions page (or ask)
+description: Class access is role-based; do not add a Permissions page or per-permission overrides
 alwaysApply: true
 ---
 
-# Permissions Page Coverage
+# Class Access (Roles, Not a Permissions Page)
 
-When adding or changing a **class capability** (something gated by authz, a new manage/read action, or a staff-only feature), decide whether it should appear on the class **Permissions** page (`/class/$classId/permissions`). If unsure, **ask the user** before shipping—do not silently omit a grantable permission or invent owner-only gates without confirmation.
+There is **no** class Permissions page and **no** per-permission override machinery. Access is:
+
+1. Instant CEL in `instant.perms.ts` (membership-scoped reads; unsafe writes denied to clients).
+2. A `role` on `classMemberships`.
+3. UI gating via `permissionsForRole(role)` in `shared/roles.ts` (`Can` / `useCan` / `RequirePermission`).
 
 ## Source of truth
 
-- Permissions and role defaults live in `convex/lib/authzModel.ts` (`definePermissions` / `defineRoles`).
-- The Permissions UI lists **grantable** permissions via `GRANTABLE_CLASS_PERMISSIONS` / `grantablePermissionGroups()` (owner catalog minus `NON_GRANTABLE_CLASS_PERMISSIONS`).
-- Labels come from i18n: `perm_<resource>_<action>` and `permGroup_<resource>` (see `src/lib/permissions/permissionLabels.ts`).
-- Page UI: `src/components/permissions/ClassPermissionsPage.tsx`.
+- Role names, ranks, and permission catalogs: `shared/roles.ts`.
+- CEL rules: `instant.perms.ts`.
+- Privileged writes (role assignment, join-code redeem, suspension): Bun admin server.
 
 ## When adding a new capability
 
-1. Add the permission under the right resource in `definePermissions` (e.g. `foo: { read: true, manage: true }`).
-2. Assign it on the correct roles in `defineRoles` (who has it by default).
-3. Gate server functions and UI with that permission (`Can` / `useCan` / authz checks)—do not hardcode role checks when a permission exists.
-4. Confirm it should be **grantable** on the Permissions page:
-   - Default: yes for staff-tunable capabilities (teacher / assistant_teacher overrides).
-   - Keep non-grantable only for owner-meta powers (today: `permissions:manage`, `class:delete`)—ask before adding more exclusions.
-5. Add `permGroup_<resource>` (if new resource) and `perm_<resource>_<action>` to **`en.ts`** and **every** locale.
-6. Wire nav/routes/actions behind the same permission so overrides actually change access.
+1. Add it to `CLASS_PERMISSION_CATALOG` and the correct role specs in `shared/roles.ts`.
+2. Express readable data in CEL (`auth.id in data.ref('…')`). Deny client writes that CEL cannot express safely; add an admin route instead.
+3. Gate UI with `Can` / `useCan` / `RequirePermission` — do not hardcode role checks when a permission string exists.
+4. **Do not** add a grantable-permissions UI, override rows, or `perm_*` / `permGroup_*` i18n keys.
 
 ## If unsure
 
 Ask before implementing, e.g.:
 
-> New capability X — propose permission `resource:action`, defaults on roles […], grantable on Permissions page: yes/no?
-
-Do not add a feature that only owners/teachers can use via hardcoded roles when a fine-grained permission + Permissions page toggle is the product pattern.
+> New capability X — propose permission `resource:action`, defaults on roles […], admin-server write: yes/no?

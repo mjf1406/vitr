@@ -10,58 +10,74 @@ export function userDataRoot(): string {
   return path.join(app.getPath("userData"), "classroom");
 }
 
-export function convexDataDir(): string {
-  return path.join(userDataRoot(), "convex-data");
+export function instantDataDir(): string {
+  return path.join(userDataRoot(), "instant-data");
 }
 
-export function instanceSecretPath(): string {
-  return path.join(userDataRoot(), "instance_secret");
+export function postgresDataDir(): string {
+  return path.join(instantDataDir(), "postgres");
 }
 
-export function adminKeyPath(): string {
-  return path.join(convexDataDir(), "admin_key");
+export function minioDataDir(): string {
+  return path.join(instantDataDir(), "minio");
 }
 
-export function authKeysPath(): string {
-  return path.join(convexDataDir(), "auth_keys.json");
+export function overrideEdnPath(): string {
+  return path.join(instantDataDir(), "override.edn");
 }
 
-export function deployMarkerPath(): string {
-  return path.join(convexDataDir(), ".deploy_complete");
+function platformDir(): string {
+  return process.platform === "win32" ? "win" : process.platform === "darwin" ? "mac" : "linux";
 }
 
-/** Path to packaged or downloaded convex-local-backend binary. */
-export function convexBackendBinary(): string {
-  const binaryName =
-    process.platform === "win32" ? "convex-local-backend.exe" : "convex-local-backend";
-
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "convex-backend", binaryName);
+function resourceRoot(): string {
+  const root = app.isPackaged
+    ? path.join(process.resourcesPath, "instant-backend")
+    : path.join(app.getAppPath(), "resources", "instant-backend");
+  const nested = path.join(root, platformDir());
+  if (existsSync(nested)) {
+    return nested;
   }
-
-  const platformDir =
-    process.platform === "win32" ? "win" : process.platform === "darwin" ? "mac" : "linux";
-  const devPath = path.join(
-    app.getAppPath(),
-    "resources",
-    "convex-backend",
-    platformDir,
-    binaryName,
-  );
-  if (existsSync(devPath)) {
-    return devPath;
-  }
-  // Fallback: unzipped download at repo root (local hacking)
-  const tmpPath = path.join(app.getAppPath(), "tmp-convex-backend", binaryName);
-  return tmpPath;
+  return root;
 }
 
-/** Project root that contains convex/ for deploy (dev = repo; prod = resources). */
-export function deployProjectDir(): string {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, "deploy-project");
-  }
-  return app.getAppPath();
+export function javaBinary(): string {
+  const name = process.platform === "win32" ? "java.exe" : "java";
+  return path.join(resourceRoot(), "jre", "bin", name);
+}
+
+export function instantJar(): string {
+  return path.join(resourceRoot(), "instant-standalone.jar");
+}
+
+export function postgresBinary(): string {
+  const name = process.platform === "win32" ? "postgres.exe" : "postgres";
+  return path.join(resourceRoot(), "postgres", "bin", name);
+}
+
+export function postgresInitdb(): string {
+  const name = process.platform === "win32" ? "initdb.exe" : "initdb";
+  return path.join(resourceRoot(), "postgres", "bin", name);
+}
+
+export function postgresHintPlanLibrary(): string {
+  const name =
+    process.platform === "win32"
+      ? "pg_hint_plan.dll"
+      : process.platform === "darwin"
+        ? "pg_hint_plan.dylib"
+        : "pg_hint_plan.so";
+  return path.join(resourceRoot(), "postgres", "lib", name);
+}
+
+export function minioBinary(): string {
+  const name = process.platform === "win32" ? "minio.exe" : "minio";
+  return path.join(resourceRoot(), "minio", name);
+}
+
+export function adminServerBinary(): string {
+  const name = process.platform === "win32" ? "admin-server.exe" : "admin-server";
+  return path.join(resourceRoot(), name);
 }
 
 export function rendererDistDir(): string {

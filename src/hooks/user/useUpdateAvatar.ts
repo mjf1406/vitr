@@ -1,53 +1,27 @@
-import { useConvexMutation } from "@convex-dev/react-query";
-import { useTranslation } from "react-i18next";
-
-import { api } from "../../../convex/_generated/api";
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import { adminPost } from "@/lib/api/admin";
+import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { toast } from "@/components/ui/toast-manager";
-import { fileBytesQueryKey } from "@/hooks/files/useFileBytes";
-import { useOptimisticMutation } from "@/hooks/useOptimisticMutation";
-import { currentUserQueryKey } from "@/hooks/user/useCurrentUser";
 import { messageFromError } from "@/lib/errors/convexError";
-
-type CurrentUser = Doc<"users"> & {
-  settings: Doc<"userSettings"> | null;
-  providers: Array<string>;
-};
+import type { Id } from "@/lib/ids";
+import { useTranslation } from "react-i18next";
 
 type UpdateAvatarArgs = {
   fileId: Id<"files">;
 };
 
-/**
- * Optimistic profile photo update (self-host / Electron).
- * Shares `currentUserQueryKey` with `useCurrentUser` (gcTime: 1 hour).
- */
 export function useUpdateAvatar() {
   const { t } = useTranslation("account");
   const { t: tCommon } = useTranslation("common");
-  const mutationFn = useConvexMutation(api.users.updateAvatar);
-  const queryKey = currentUserQueryKey();
-
-  return useOptimisticMutation({
-    mutationFn: (args: UpdateAvatarArgs) => mutationFn(args),
-    queryKeys: [queryKey],
-    applyOptimisticUpdate: (queryClient, { fileId }) => {
-      const previous = queryClient.getQueryData<CurrentUser | null>(queryKey);
-      const previousAvatarId = previous?.avatarFileId;
-      if (previousAvatarId !== undefined && previousAvatarId !== fileId) {
-        void queryClient.removeQueries({ queryKey: fileBytesQueryKey(previousAvatarId) });
-      }
-      queryClient.setQueryData<CurrentUser | null>(queryKey, (old) => {
-        if (!old) return old;
-        // Clear provider URL; ProfileCard loads the new file via useFileBytes.
-        return { ...old, avatarFileId: fileId, image: undefined };
-      });
+  return useAsyncAction(
+    (args: UpdateAvatarArgs) =>
+      adminPost("/api/account/update-profile", { avatarFileId: args.fileId }),
+    {
+      onError: (error) => {
+        toast.add({
+          type: "error",
+          title: messageFromError(error, t("avatarSaveFailed"), tCommon("rateLimited")),
+        });
+      },
     },
-    onError: (error) => {
-      toast.add({
-        type: "error",
-        title: messageFromError(error, t("avatarSaveFailed"), tCommon("rateLimited")),
-      });
-    },
-  });
+  );
 }

@@ -1,11 +1,11 @@
-import { useConvexMutation } from "@convex-dev/react-query";
-import { useMutation } from "@tanstack/react-query";
+import { id } from "@instantdb/react";
 import { useTranslation } from "react-i18next";
 
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
+import { db } from "@/lib/instant/db";
+import { useAsyncAction } from "@/hooks/useAsyncAction";
 import { toast } from "@/components/ui/toast-manager";
 import { messageFromError } from "@/lib/errors/convexError";
+import type { Id } from "@/lib/ids";
 import type {
   FeedbackType,
   FeedbackImportance,
@@ -28,20 +28,45 @@ export type SubmitFeedbackArgs = {
   attachmentFileIds: Id<"files">[];
 };
 
-/** Fire-and-forget submit — no optimistic list for the submitter. */
 export function useSubmitFeedback() {
   const { t } = useTranslation("feedback");
   const { t: tCommon } = useTranslation("common");
-  const mutationFn = useConvexMutation(api.feedback.submit);
+  const { user } = db.useAuth();
 
-  return useMutation({
-    mutationFn: (args: SubmitFeedbackArgs) => mutationFn(args),
-    retry: false,
-    onError: (error) => {
-      toast.add({
-        title: messageFromError(error, t("submitFailed"), tCommon("rateLimited")),
-        type: "error",
-      });
+  return useAsyncAction(
+    async (args: SubmitFeedbackArgs) => {
+      if (!user) throw new Error("Not authenticated");
+      const feedbackId = id();
+      await db.transact(
+        db.tx.feedback[feedbackId]
+          .update({
+            type: args.type,
+            title: args.title,
+            body: args.body,
+            stepsToReproduce: args.stepsToReproduce,
+            expected: args.expected,
+            actual: args.actual,
+            severity: args.severity,
+            useCase: args.useCase,
+            proposedSolution: args.proposedSolution,
+            importance: args.importance,
+            impact: args.impact,
+            wantReply: args.wantReply,
+            createdAt: Date.now(),
+          })
+          .link({
+            user: user.id,
+            ...(args.attachmentFileIds.length > 0 ? { attachments: args.attachmentFileIds } : {}),
+          }),
+      );
     },
-  });
+    {
+      onError: (error) => {
+        toast.add({
+          title: messageFromError(error, t("submitFailed"), tCommon("rateLimited")),
+          type: "error",
+        });
+      },
+    },
+  );
 }

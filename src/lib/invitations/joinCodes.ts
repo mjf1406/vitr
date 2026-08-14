@@ -1,8 +1,18 @@
-import type { Doc, Id } from "../../../convex/_generated/dataModel";
+import type { Id } from "@/lib/ids";
 import { classroomJoinOrigin, type ClassroomSession } from "@/lib/classroom/classroomSession";
 import { randomClientId } from "@/lib/optimistic";
+import type { JoinCodeRole } from "@/lib/permissions/classPermissions";
 
-export type JoinCodePublic = Omit<Doc<"joinCodes">, "expirationJobId"> & {
+export type JoinCodePublic = {
+  _id: Id<"joinCodes">;
+  _creationTime: number;
+  code: string;
+  classId: Id<"classes">;
+  createdBy: Id<"users">;
+  role: JoinCodeRole | string;
+  expiresAt: number;
+  maxUses: number;
+  useCount: number;
   _pending?: boolean;
 };
 
@@ -39,7 +49,6 @@ export function createOptimisticJoinCodeId(): Id<"joinCodes"> {
 
 /**
  * Query param for join-code share links (`/join?jc=…`).
- * Must not be `code` — that collides with Convex Auth's OAuth/magic-link handler.
  */
 export const JOIN_CODE_PARAM = "jc";
 
