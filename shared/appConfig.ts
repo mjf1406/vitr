@@ -1,8 +1,8 @@
 /**
  * TEMPLATE: Single brand config — change these when cloning (`bun run post-clone`).
  * Neutral slug/tenant id are `vitr`; sample URLs below still use ClassClarus placeholders
- * until post-clone retargets them. Brand images: `public/brand/` (sun sample assets).
- * Template favicon: `public/vctr/vctr-favicon.webp`.
+ * until post-clone retargets them. Brand images: `public/vitr/` (`logo-big.webp`, `logo-small.webp`).
+ * Template favicon: `public/vitr/logo-small.webp`.
  * `name` is never translated — i18n uses it via defaultVariables.appName.
  */
 export const APP_CONFIG = {

@@ -82,11 +82,7 @@ export default defineConfig({
       VitePWA({
         registerType: "prompt",
         injectRegister: false,
-        includeAssets: [
-          "vctr/vctr-favicon.webp",
-          "brand/logo/icon-86.webp",
-          "pwa/apple-touch-icon.png",
-        ],
+        includeAssets: ["vitr/logo-small.webp", "vitr/logo-big.webp", "pwa/apple-touch-icon.png"],
         manifest: {
           name: APP_CONFIG.name,
           short_name: APP_CONFIG.name,

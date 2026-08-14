@@ -21,7 +21,7 @@ export default function PendingComponent({ message, inset = false }: PendingComp
       )}
     >
       <div className="flex flex-col items-center gap-1">
-        <Icon className="size-24 animate-spin" />
+        <Icon large className="size-24 animate-spin" />
         <span className="text-muted-foreground text-lg">{label}</span>
       </div>
     </div>

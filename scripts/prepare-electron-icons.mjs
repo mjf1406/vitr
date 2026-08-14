@@ -1,7 +1,7 @@
 /**
  * Convert brand WebP → build/icon.png for electron-builder (Windows .ico / macOS .icns).
  *
- * Source is the high-res brand mark (same art as public/brand/logo/icon-86.webp).
+ * Source is the high-res brand mark (`public/vitr/logo-big.webp`).
  * Windows Control Panel / NSIS need a multi-size .ico; electron-builder generates that
  * from a ≥512px PNG under directories.buildResources (webp is not supported).
  */
@@ -10,7 +10,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 const root = path.resolve(import.meta.dirname, "..");
-const source = path.join(root, "public", "brand", "logo", "icon-688.webp");
+const source = path.join(root, "public", "vitr", "logo-big.webp");
 const outDir = path.join(root, "build");
 const outPng = path.join(outDir, "icon.png");
 
@@ -20,6 +20,7 @@ const { width, height } = await sharp(source).metadata();
 if (!width || !height) {
   throw new Error(`prepare-electron-icons: could not read dimensions of ${source}`);
 }
+const ICON_SIZE = 512;
 const side = Math.max(width, height);
 const meta = await sharp(source)
   .extend({
@@ -29,6 +30,7 @@ const meta = await sharp(source)
     right: Math.ceil((side - width) / 2),
     background: { r: 0, g: 0, b: 0, alpha: 1 },
   })
+  .resize(ICON_SIZE, ICON_SIZE)
   .png()
   .toFile(outPng);
 

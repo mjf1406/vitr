@@ -656,7 +656,7 @@ Suggested order:
   3. bunx instant-cli push schema && bunx instant-cli push perms
   4. Google OAuth client name in Instant dashboard; VITE_INSTANT_GOOGLE_CLIENT_NAME
   5. Polar sandbox → admin-server env (POLAR_*)
-  6. Replace public/brand/** + public/vctr/vctr-favicon.webp
+  6. Replace public/vitr/logo-big.webp + public/vitr/logo-small.webp
   7. vp run ds
 
 Do not copy template secrets. Tick boxes in CLONE_CHECKLIST.md as you go.

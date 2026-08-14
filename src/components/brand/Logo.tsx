@@ -2,11 +2,8 @@
 
 import { useTranslation } from "react-i18next";
 
-import logo from "/brand/logo/icon-and-text-horizontal.webp";
-import logoAboveText from "/brand/logo/icon-above-text.webp";
-import icon from "/brand/logo/icon-688.webp";
-import textLogo from "/brand/logo/text.webp";
-import logoXS from "/brand/logo/icon-86.webp";
+import logoBig from "/vitr/logo-big.webp";
+import logoSmall from "/vitr/logo-small.webp";
 import { APP_CONFIG } from "@/config/app";
 import { isElectronClassroom } from "@/lib/classroom/classroomSession";
 import { isSelfHosted } from "@/lib/selfHosted";
@@ -25,6 +22,7 @@ function ModeBrandMark({ size, layout = "horizontal", className }: ModeBrandMark
   const label = isElectronClassroom() ? t("logoElectron") : t("logoSelfHosted");
   const iconSize = size === "lg" ? 72 : 40;
   const textClassName = size === "lg" ? "text-3xl" : "text-lg";
+  const src = size === "lg" ? logoBig : logoSmall;
 
   return (
     <span
@@ -35,7 +33,7 @@ function ModeBrandMark({ size, layout = "horizontal", className }: ModeBrandMark
       )}
     >
       <ImageSkeleton
-        src={logoXS}
+        src={src}
         alt={`${APP_CONFIG.name} Icon`}
         width={iconSize}
         height={iconSize}
@@ -50,7 +48,15 @@ export function LogoBig() {
   if (isSelfHosted()) {
     return <ModeBrandMark size="lg" />;
   }
-  return <ImageSkeleton src={logo} alt={`${APP_CONFIG.name} Logo`} width={399} height={125} />;
+  return (
+    <ImageSkeleton
+      src={logoBig}
+      alt={`${APP_CONFIG.name} Logo`}
+      width={160}
+      height={160}
+      objectFit="contain"
+    />
+  );
 }
 
 export function Logo() {
@@ -59,38 +65,38 @@ export function Logo() {
   }
   return (
     <ImageSkeleton
-      src={logo}
+      src={logoSmall}
       alt={`${APP_CONFIG.name} Logo`}
-      width={169}
-      height={53}
+      width={40}
+      height={40}
       objectFit="contain"
     />
   );
 }
 
-/** Stacked mark for narrow slots (e.g. footer brand column). */
+/** Square mark for narrow slots (e.g. footer brand column). */
 export function LogoAboveText({ className }: { className?: string } = {}) {
   if (isSelfHosted()) {
     return <ModeBrandMark size="sm" layout="stacked" className={className} />;
   }
   return (
     <ImageSkeleton
-      src={logoAboveText}
+      src={logoSmall}
       alt={`${APP_CONFIG.name} Logo`}
-      width={140}
-      height={140}
+      width={56}
+      height={56}
       objectFit="contain"
       className={className}
     />
   );
 }
 
-export function Icon({ className }: { className?: string } = {}) {
-  const width = className ? undefined : 64;
-  const height = className ? undefined : 64;
+export function Icon({ className, large = false }: { className?: string; large?: boolean } = {}) {
+  const width = className ? undefined : large ? 96 : 32;
+  const height = className ? undefined : large ? 96 : 32;
   return (
     <ImageSkeleton
-      src={icon}
+      src={large ? logoBig : logoSmall}
       alt={`${APP_CONFIG.name} Icon`}
       width={width}
       height={height}
@@ -100,11 +106,11 @@ export function Icon({ className }: { className?: string } = {}) {
 }
 
 export function TextLogo({ className }: { className?: string } = {}) {
-  const width = className ? undefined : 200;
+  const width = className ? undefined : 40;
   const height = className ? undefined : 40;
   return (
     <ImageSkeleton
-      src={textLogo}
+      src={logoSmall}
       alt={`${APP_CONFIG.name} Text Logo`}
       width={width}
       height={height}
@@ -114,11 +120,11 @@ export function TextLogo({ className }: { className?: string } = {}) {
 }
 
 export function LogoXS({ className }: { className?: string } = {}) {
-  const width = className ? undefined : 172;
-  const height = className ? undefined : 155;
+  const width = className ? undefined : 40;
+  const height = className ? undefined : 40;
   return (
     <ImageSkeleton
-      src={logoXS}
+      src={logoSmall}
       alt={`${APP_CONFIG.name} Logo`}
       width={width}
       height={height}
